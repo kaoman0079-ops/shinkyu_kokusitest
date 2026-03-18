@@ -144,7 +144,7 @@ function startQuiz() {
 
 function showQuestion() {
     const q = quizSet[currentIndex];
-    // ↓ 表記をスッキリ修正しました
+    // ↓ スッキリ「第○回 ○問」の形式に修正しました
     document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}] - ${q.開催回} ${q.問題番号}問`;
     document.getElementById('question-text').innerText = q.問題文;
     
@@ -161,7 +161,7 @@ function showQuestion() {
     document.getElementById('explanation-box').style.display = 'none';
     document.getElementById('next-btn').style.display = 'none';
 }
-
+    
 function checkAnswer(selected, btn) {
     const q = quizSet[currentIndex];
     const correct = parseInt(q.正解);
