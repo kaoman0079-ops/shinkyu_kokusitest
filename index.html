@@ -144,8 +144,8 @@ function startQuiz() {
 
 function showQuestion() {
     const q = quizSet[currentIndex];
-    // ↓ スッキリ「第○回 ○問」の形式に修正しました
-    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}] - ${q.開催回} ${q.問題番号}問`;
+    // CSVの「問題 16」をそのまま表示。余計な「問」は足しません。
+    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}] - ${q.開催回} ${q.問題番号}`;
     document.getElementById('question-text').innerText = q.問題文;
     
     const container = document.getElementById('options-container');
