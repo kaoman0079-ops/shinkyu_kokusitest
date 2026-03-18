@@ -144,8 +144,8 @@ function startQuiz() {
 
 function showQuestion() {
     const q = quizSet[currentIndex];
-    // ↓ ここを修正しました！ [分野] - 開催回 第○問 と表示されます
-    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}] - ${q.開催回} 第${q.問題番号}問`;
+    // ↓ 表記をスッキリ修正しました
+    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}] - ${q.開催回} ${q.問題番号}問`;
     document.getElementById('question-text').innerText = q.問題文;
     
     const container = document.getElementById('options-container');
