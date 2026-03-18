@@ -10,15 +10,19 @@
         h1 { color: #2c3e50; text-align: center; }
         .setup-area, .quiz-area, .result-area { display: none; }
         .active { display: block; }
-        .option-btn { display: block; width: 100%; text-align: left; padding: 18px; margin: 12px 0; border: 2px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; font-size: 16px; width: 100%; }
+        .option-btn { display: block; width: 100%; text-align: left; padding: 18px; margin: 12px 0; border: 2px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; font-size: 16px; width: 100%; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
         .correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; font-weight: bold; }
         .wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
         .explanation { margin-top: 25px; padding: 20px; background: #fff3cd; border-left: 6px solid #ffc107; border-radius: 8px; display: none; }
+        .explanation strong { color: #856404; display: block; margin-bottom: 8px; font-size: 1.1em; }
+        .explanation p { margin: 5px 0; white-space: pre-wrap; } /* 改行を反映させる設定 */
         .btn-primary { background: #3498db; color: white; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-size: 18px; width: 100%; font-weight: bold; }
         .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-next { background: #27ae60; color: white; border: none; padding: 18px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; display: none; font-size: 18px; width: 100%; }
+        .btn-next { background: #27ae60; color: white; border: none; padding: 18px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; display: none; font-size: 18px; font-weight: bold; }
         select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; font-size: 16px; }
         .status { text-align: center; font-size: 0.9em; color: #666; margin-bottom: 10px; }
+        .filter-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #555; }
     </style>
 </head>
 <body>
@@ -48,21 +52,20 @@
         <div id="question-text" style="font-weight: bold; font-size: 1.2em; margin-bottom: 25px;"></div>
         <div id="options-container"></div>
         <div id="explanation-box" class="explanation">
-            <strong>【正解】</strong>
-            <p id="explanation-text"></p>
+            <strong>💡 解説</strong>
+            <div id="explanation-text"></div>
         </div>
         <button id="next-btn" class="btn-next" onclick="nextQuestion()">次の問題へ進む ➔</button>
     </div>
 </div>
 
 <div id="result-area" class="result-area card">
-    <h2 style="text-align:center;">終了！</h2>
-    <p id="final-score" style="font-size: 1.5em; text-align: center;"></p>
+    <h2 style="text-align:center;">終了！お疲れ様でした。</h2>
+    <p id="final-score" style="font-size: 1.5em; text-align: center; margin: 20px 0;"></p>
     <button class="btn-primary" onclick="location.reload()">最初に戻る</button>
 </div>
 
 <script>
-// ファイル名が data.csv であることを確認してください
 const DATA_URL = 'data.csv'; 
 
 let masterData = [];
@@ -72,7 +75,6 @@ let score = 0;
 
 window.onload = async function() {
     try {
-        // キャッシュを避けるためにタイムスタンプを付与
         const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
         const csvText = await response.text();
         masterData = parseCSV(csvText);
@@ -108,7 +110,6 @@ function parseCSV(text) {
 }
 
 function updateFilters(data) {
-    // あなたのスプレッドシートの見出し「開催回」と「分野」を使用
     const years = [...new Set(data.map(q => q.開催回))].filter(Boolean).sort().reverse();
     const subjects = [...new Set(data.map(q => q.分野))].filter(Boolean).sort();
     
@@ -148,7 +149,6 @@ function showQuestion() {
     const container = document.getElementById('options-container');
     container.innerHTML = '';
     
-    // 選択肢1〜4を使用
     for(let i=1; i<=4; i++) {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
@@ -174,8 +174,18 @@ function checkAnswer(selected, btn) {
         if(btns[correct-1]) btns[correct-1].classList.add('correct');
     }
 
-    document.getElementById('explanation-box').style.display = 'block';
-    document.getElementById('explanation-text').innerText = `正解は「${q['選択肢'+correct]}」です。`;
+    // 解説を表示
+    const expBox = document.getElementById('explanation-box');
+    const expText = document.getElementById('explanation-text');
+    expBox.style.display = 'block';
+    
+    // 正解のテキストとCSVの解説カラムを合わせて表示
+    let explanationHTML = `<p><b>正解：${q['選択肢'+correct]}</b></p>`;
+    if (q.解説) {
+        explanationHTML += `<hr style="border:0; border-top:1px solid #e9d7a5; margin:10px 0;"><p>${q.解説}</p>`;
+    }
+    expText.innerHTML = explanationHTML;
+    
     document.getElementById('next-btn').style.display = 'block';
 }
 
