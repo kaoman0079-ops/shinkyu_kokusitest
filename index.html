@@ -38,10 +38,11 @@
         <select id="filter-subject"><option value="all">すべて</option></select>
         <label><b>出題数</b></label>
         <select id="quiz-count">
-    <option value="5">5問</option>  <option value="10">10問</option>
-    <option value="30">30問</option>
-    <option value="999">無限（全対象）</option>
-</select>
+            <option value="5">5問</option>
+            <option value="10">10問</option>
+            <option value="30">30問</option>
+            <option value="999">無限（全対象）</option>
+        </select>
     </div>
     <button id="start-btn" class="btn-primary" onclick="startQuiz()" disabled>同期をお待ちください</button>
 </div>
@@ -143,7 +144,8 @@ function startQuiz() {
 
 function showQuestion() {
     const q = quizSet[currentIndex];
-    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}]`;
+    // ↓ ここを修正しました！ [分野] - 開催回 第○問 と表示されます
+    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}] - ${q.開催回} 第${q.問題番号}問`;
     document.getElementById('question-text').innerText = q.問題文;
     
     const container = document.getElementById('options-container');
@@ -174,12 +176,10 @@ function checkAnswer(selected, btn) {
         if(btns[correct-1]) btns[correct-1].classList.add('correct');
     }
 
-    // 解説を表示
     const expBox = document.getElementById('explanation-box');
     const expText = document.getElementById('explanation-text');
     expBox.style.display = 'block';
     
-    // 正解のテキストとCSVの解説カラムを合わせて表示
     let explanationHTML = `<p><b>正解：${q['選択肢'+correct]}</b></p>`;
     if (q.解説) {
         explanationHTML += `<hr style="border:0; border-top:1px solid #e9d7a5; margin:10px 0;"><p>${q.解説}</p>`;
