@@ -7,17 +7,18 @@
     <style>
         body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; color: #333; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
+        h1 { color: #2c3e50; text-align: center; }
         .setup-area, .quiz-area, .result-area { display: none; }
         .active { display: block; }
-        .option-btn { display: block; width: 100%; text-align: left; padding: 18px; margin: 12px 0; border: 2px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; transition: 0.2s; font-size: 16px; width: 100%; }
-        .option-btn:hover:not(:disabled) { border-color: #3498db; background-color: #f7fbfe; }
+        .option-btn { display: block; width: 100%; text-align: left; padding: 18px; margin: 12px 0; border: 2px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; font-size: 16px; width: 100%; }
         .correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; font-weight: bold; }
         .wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
         .explanation { margin-top: 25px; padding: 20px; background: #fff3cd; border-left: 6px solid #ffc107; border-radius: 8px; display: none; }
         .btn-primary { background: #3498db; color: white; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-size: 18px; width: 100%; font-weight: bold; }
-        .btn-next { background: #27ae60; color: white; border: none; padding: 18px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; display: none; font-size: 18px; font-weight: bold; }
-        select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; font-size: 16px; background-color: #fff; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-next { background: #27ae60; color: white; border: none; padding: 18px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; display: none; font-size: 18px; width: 100%; }
+        select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; font-size: 16px; }
+        .status { text-align: center; font-size: 0.9em; color: #666; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -25,42 +26,20 @@
 <h1>🩺 国家試験 無限クイズ</h1>
 
 <div id="setup-area" class="card active">
+    <div id="status-msg" class="status">データ同期中...</div>
     <div class="filter-group">
         <label><b>開催回</b></label>
-        <select id="filter-year">
-            <option value="all">すべて表示</option>
-            <option value="第33回">第33回</option>
-            <option value="第32回">第32回</option>
-            <option value="第31回">第31回</option>
-            <option value="第30回">第30回</option>
-            <option value="第29回">第29回</option>
-        </select>
-        
+        <select id="filter-year"><option value="all">すべて</option></select>
         <label><b>分野</b></label>
-        <select id="filter-subject">
-            <option value="all">すべての分野</option>
-            <option value="医療概論・法規・衛生">医療概論・法規・衛生</option>
-            <option value="解剖学">解剖学</option>
-            <option value="生理学">生理学</option>
-            <option value="病理学概論">病理学概論</option>
-            <option value="臨床医学総論">臨床医学総論</option>
-            <option value="臨床医学各論">臨床医学各論</option>
-            <option value="リハビリテーション医学">リハビリテーション医学</option>
-            <option value="東洋医学概論">東洋医学概論</option>
-            <option value="経絡経穴概論">経絡経穴概論</option>
-            <option value="東洋医学臨床論">東洋医学臨床論</option>
-            <option value="はり理論">はり理論</option>
-            <option value="きゅう理論">きゅう理論</option>
-        </select>
-        
+        <select id="filter-subject"><option value="all">すべて</option></select>
         <label><b>出題数</b></label>
         <select id="quiz-count">
-            <option value="5">5問</option>
             <option value="10">10問</option>
+            <option value="30">30問</option>
             <option value="999">無限（全対象）</option>
         </select>
     </div>
-    <button class="btn-primary" onclick="initQuiz()">学習開始！</button>
+    <button id="start-btn" class="btn-primary" onclick="startQuiz()" disabled>同期をお待ちください</button>
 </div>
 
 <div id="quiz-area" class="quiz-area">
@@ -69,7 +48,7 @@
         <div id="question-text" style="font-weight: bold; font-size: 1.2em; margin-bottom: 25px;"></div>
         <div id="options-container"></div>
         <div id="explanation-box" class="explanation">
-            <strong>【正解・解説】</strong>
+            <strong>【正解】</strong>
             <p id="explanation-text"></p>
         </div>
         <button id="next-btn" class="btn-next" onclick="nextQuestion()">次の問題へ進む ➔</button>
@@ -77,65 +56,103 @@
 </div>
 
 <div id="result-area" class="result-area card">
-    <h2 style="text-align:center;">お疲れ様でした！</h2>
+    <h2 style="text-align:center;">終了！</h2>
     <p id="final-score" style="font-size: 1.5em; text-align: center;"></p>
     <button class="btn-primary" onclick="location.reload()">最初に戻る</button>
 </div>
 
 <script>
-// データを直接埋め込み（ここに全データを格納）
-const questionsData = [
-    {id:1, 回:"第29回", 分野:"医療概論・法規・衛生", 問:"我が国の国民医療費の現状について正しいのはどれか。", 選1:"対国民所得比は15％を超える。", 選2:"国民医療費は50兆円を超える。", 選3:"財源は患者負担が30％を超える。", 選4:"国民一人あたりの医療費は年間30万円を超える。", 正:4},
-    {id:14, 回:"第29回", 分野:"解剖学", 問:"成人の脊柱で後弯しているのはどれか。", 選1:"頸部", 選2:"胸部", 選3:"腰部", 選4:"仙骨部（※胸部も正解）", 正:2},
-    {id:841, 回:"第33回", 分野:"経絡経穴概論", 問:"原穴が足関節部にある経脈はどれか。", 選1:"足の少陰経", 選2:"足の太陽経", 選3:"足の陽明経", 選4:"足の太陰経", 正:1},
-    {id:900, 回:"第33回", 分野:"きゅう理論", 問:"施灸により遊離し、血管透過性を高める物質はどれか。", 選1:"アセチルコリン", 選2:"アドレナリン", 選3:"ドーパミン", 選4:"セロトニン", 正:4}
-    // ※実際にはここに全データを流し込みますが、まずは動作確認用のサンプルです
-];
+// ファイル名が data.csv であることを確認してください
+const DATA_URL = 'data.csv'; 
 
-// --- データの追加をシミュレート（本来はここにCSVの内容を変換して入れます） ---
-// 今回はサンプルですが、動作は完璧です。
-
-let currentQuizSet = [];
+let masterData = [];
+let quizSet = [];
 let currentIndex = 0;
 let score = 0;
 
-function initQuiz() {
+window.onload = async function() {
+    try {
+        // キャッシュを避けるためにタイムスタンプを付与
+        const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
+        const csvText = await response.text();
+        masterData = parseCSV(csvText);
+        
+        if(masterData.length > 0) {
+            updateFilters(masterData);
+            document.getElementById('status-msg').innerText = `✅ データ同期完了：${masterData.length}問`;
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('start-btn').innerText = "学習開始！";
+        } else {
+            throw new Error('データが空です');
+        }
+    } catch (e) {
+        document.getElementById('status-msg').innerText = "⚠️ 同期失敗。data.csvが正しい場所にあり、見出しが合っているか確認してください。";
+        console.error(e);
+    }
+};
+
+function parseCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    if(lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    return lines.slice(1).map(line => {
+        const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        let obj = {};
+        headers.forEach((h, i) => {
+            let val = values[i] ? values[i].trim().replace(/^"|"$/g, '').replace(/""/g, '"') : "";
+            obj[h] = val;
+        });
+        return obj;
+    });
+}
+
+function updateFilters(data) {
+    // あなたのスプレッドシートの見出し「開催回」と「分野」を使用
+    const years = [...new Set(data.map(q => q.開催回))].filter(Boolean).sort().reverse();
+    const subjects = [...new Set(data.map(q => q.分野))].filter(Boolean).sort();
+    
+    const ys = document.getElementById('filter-year');
+    years.forEach(y => { ys.innerHTML += `<option value="${y}">${y}</option>`; });
+    
+    const ss = document.getElementById('filter-subject');
+    subjects.forEach(s => { ss.innerHTML += `<option value="${s}">${s}</option>`; });
+}
+
+function startQuiz() {
     const year = document.getElementById('filter-year').value;
     const subject = document.getElementById('filter-subject').value;
     const count = parseInt(document.getElementById('quiz-count').value);
-
-    // フィルタリング
-    currentQuizSet = questionsData.filter(q => {
-        return (year === 'all' || q.回 === year) && (subject === 'all' || q.分野 === subject);
-    });
-
-    if(currentQuizSet.length === 0) {
-        alert("データ準備中です。第29回、第33回、解剖学などでテストしてください。");
+    
+    quizSet = masterData.filter(q => (year === 'all' || q.開催回 === year) && (subject === 'all' || q.分野 === subject));
+    
+    if(quizSet.length === 0) {
+        alert("条件に合う問題がありませんでした。");
         return;
     }
 
-    currentQuizSet.sort(() => Math.random() - 0.5);
-    if(count < currentQuizSet.length) currentQuizSet = currentQuizSet.slice(0, count);
+    quizSet.sort(() => Math.random() - 0.5);
+    if(count < quizSet.length) quizSet = quizSet.slice(0, count);
     
-    currentIndex = 0;
-    score = 0;
-    document.getElementById('setup-area').classList.remove('active');
+    currentIndex = 0; score = 0;
+    document.getElementById('setup-area').style.display = 'none';
     document.getElementById('quiz-area').classList.add('active');
     showQuestion();
 }
 
 function showQuestion() {
-    const q = currentQuizSet[currentIndex];
-    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${currentQuizSet.length}問 [${q.分野}]`;
-    document.getElementById('question-text').innerText = q.問;
+    const q = quizSet[currentIndex];
+    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}]`;
+    document.getElementById('question-text').innerText = q.問題文;
     
     const container = document.getElementById('options-container');
     container.innerHTML = '';
     
+    // 選択肢1〜4を使用
     for(let i=1; i<=4; i++) {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.innerText = q[`選${i}`];
+        btn.innerText = q[`選択肢${i}`];
         btn.onclick = () => checkAnswer(i, btn);
         container.appendChild(btn);
     }
@@ -144,31 +161,31 @@ function showQuestion() {
 }
 
 function checkAnswer(selected, btn) {
-    const q = currentQuizSet[currentIndex];
+    const q = quizSet[currentIndex];
+    const correct = parseInt(q.正解);
     const btns = document.querySelectorAll('.option-btn');
     btns.forEach(b => b.disabled = true);
     
-    if(selected === q.正) {
+    if(selected === correct) {
         btn.classList.add('correct');
         score++;
     } else {
         btn.classList.add('wrong');
-        btns[q.正-1].classList.add('correct');
+        if(btns[correct-1]) btns[correct-1].classList.add('correct');
     }
 
     document.getElementById('explanation-box').style.display = 'block';
-    document.getElementById('explanation-text').innerText = `正解は「${q['選'+q.正]}」です。`;
+    document.getElementById('explanation-text').innerText = `正解は「${q['選択肢'+correct]}」です。`;
     document.getElementById('next-btn').style.display = 'block';
 }
 
 function nextQuestion() {
     currentIndex++;
-    if(currentIndex < currentQuizSet.length) {
-        showQuestion();
-    } else {
+    if(currentIndex < quizSet.length) showQuestion();
+    else {
         document.getElementById('quiz-area').classList.remove('active');
         document.getElementById('result-area').classList.add('active');
-        document.getElementById('final-score').innerText = `${currentQuizSet.length}問中 ${score}問 正解！`;
+        document.getElementById('final-score').innerText = `${quizSet.length}問中 ${score}問 正解！`;
     }
 }
 </script>
