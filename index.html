@@ -5,24 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>国家試験対策 無限クイズ</title>
     <style>
-        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1 { color: #2c3e50; text-align: center; }
+        /* 全体のベース：目に優しい背景色とゆったりした文字間隔 */
+        body { 
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; 
+            line-height: 1.8; 
+            max-width: 850px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f0f2f5; 
+            color: #2c3e50; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* カード：余白を広げ、角を少し丸めて高級感を */
+        .card { 
+            background: white; 
+            padding: 35px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            margin-bottom: 25px; 
+        }
+
+        h1 { color: #1a2a3a; text-align: center; font-size: 1.8em; margin-bottom: 30px; }
+
         .setup-area, .quiz-area, .result-area { display: none; }
         .active { display: block; }
-        .option-btn { display: block; width: 100%; text-align: left; padding: 18px; margin: 12px 0; border: 2px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; font-size: 16px; width: 100%; transition: 0.2s; }
-        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f7fbff; }
-        .correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; font-weight: bold; }
-        .wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
-        .explanation { margin-top: 25px; padding: 20px; background: #fff3cd; border-left: 6px solid #ffc107; border-radius: 8px; display: none; }
-        .explanation strong { color: #856404; display: block; margin-bottom: 8px; font-size: 1.1em; }
-        .explanation p { margin: 5px 0; white-space: pre-wrap; } /* 改行を反映させる設定 */
-        .btn-primary { background: #3498db; color: white; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-size: 18px; width: 100%; font-weight: bold; }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-next { background: #27ae60; color: white; border: none; padding: 18px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; display: none; font-size: 18px; font-weight: bold; }
-        select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 15px; font-size: 16px; }
-        .status { text-align: center; font-size: 0.9em; color: #666; margin-bottom: 10px; }
-        .filter-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #555; }
+
+        /* 選択肢ボタン：文字を大きく、押しやすく（iPadのタップに最適化） */
+        .option-btn { 
+            display: block; 
+            width: 100%; 
+            text-align: left; 
+            padding: 22px; 
+            margin: 15px 0; 
+            border: 2px solid #e0e6ed; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            background: #fff; 
+            font-size: 18px; /* 16pxから18pxへ拡大 */
+            color: #34495e;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover:not(:disabled) { 
+            border-color: #3498db; 
+            background: #f0f9ff; 
+            transform: translateY(-1px);
+        }
+
+        /* 正解・不正解の色：コントラストをはっきりさせつつ、どぎつくない色に */
+        .correct { background-color: #e8f5e9 !important; border-color: #4caf50 !important; color: #2e7d32; font-weight: bold; }
+        .wrong { background-color: #ffebee !important; border-color: #ef5350 !important; color: #c62828; }
+
+        /* 解説ボックス：最も重要な場所なので、背景を落ち着いた黄色に */
+        .explanation { 
+            margin-top: 30px; 
+            padding: 25px; 
+            background: #fff9db; 
+            border-left: 8px solid #f1c40f; 
+            border-radius: 10px; 
+            display: none; 
+            font-size: 17px;
+        }
+        .explanation strong { color: #856404; display: block; margin-bottom: 12px; font-size: 1.2em; }
+        .explanation p { margin: 8px 0; white-space: pre-wrap; line-height: 1.8; }
+
+        /* ボタン類：力強く、押し間違いのないサイズ */
+        .btn-primary { 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            padding: 20px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 20px; 
+            width: 100%; 
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
+        }
+        .btn-primary:disabled { background: #bdc3c7; cursor: not-allowed; box-shadow: none; }
+
+        .btn-next { 
+            background: #2ecc71; 
+            color: white; 
+            border: none; 
+            padding: 22px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-top: 20px; 
+            display: none; 
+            font-size: 20px; 
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
+        }
+
+        /* セレクトボックス：iPadで選択しやすい高さ */
+        select { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #dcdde1; margin-bottom: 20px; font-size: 17px; background: #fff; }
+        
+        .status { text-align: center; font-size: 1em; color: #7f8c8d; margin-bottom: 15px; }
+        .filter-group label { display: block; margin-bottom: 8px; font-size: 1em; color: #2c3e50; font-weight: bold; }
+        
+        /* 進行状況：さりげなく、でも読みやすく */
+        #quiz-progress { font-size: 1em; color: #95a5a6; margin-bottom: 15px; letter-spacing: 0.05em; }
+        #question-text { font-weight: bold; font-size: 1.4em; margin-bottom: 30px; color: #2c3e50; line-height: 1.6; }
     </style>
 </head>
 <body>
