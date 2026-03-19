@@ -258,25 +258,24 @@ function checkAnswer(selected, btn) {
     const correct = parseInt(q.正解);
     const btns = document.querySelectorAll('.option-btn');
     btns.forEach(b => b.disabled = true);
-    
+
     if(selected === correct) {
         btn.classList.add('correct');
         score++;
+        q.userCorrect = true;  // ★ここを追加！正解したことをデータに記録します
     } else {
         btn.classList.add('wrong');
         if(btns[correct-1]) btns[correct-1].classList.add('correct');
+        q.userCorrect = false; // ★ここを追加！間違えたことも記録します
     }
-
+    
+    // （解説表示などの続きのコード...）
     const expBox = document.getElementById('explanation-box');
     const expText = document.getElementById('explanation-text');
     expBox.style.display = 'block';
-    
     let explanationHTML = `<p><b>正解：${q['選択肢'+correct]}</b></p>`;
-    if (q.解説) {
-        explanationHTML += `<hr style="border:0; border-top:1px solid #e9d7a5; margin:10px 0;"><p>${q.解説}</p>`;
-    }
+    if (q.解説) { explanationHTML += `<hr style="border:0; border-top:1px solid #e9d7a5; margin:10px 0;"><p>${q.解説}</p>`; }
     expText.innerHTML = explanationHTML;
-    
     document.getElementById('next-btn').style.display = 'block';
 }
 
