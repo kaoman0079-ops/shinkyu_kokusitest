@@ -113,7 +113,7 @@
 </head>
 <body>
 
-<h1>🩺 国家試験 無限クイズ</h1>
+<h1>🪡 はり・きゅう国家試験対策アプリ ♨️</h1>
 
 <div id="setup-area" class="card active">
     <div id="status-msg" class="status">データ同期中...</div>
@@ -290,17 +290,29 @@ function nextQuestion() {
         document.getElementById('result-area').classList.add('active');
         document.getElementById('final-score').innerText = `${quizSet.length}問中 ${score}問 正解！`;
 
-        // --- 今回の出題リストを生成する処理 ---
+        // --- ここから追加：中が空洞の赤い丸（◎）アイコン付きリストの生成 ---
         const listContainer = document.getElementById('review-list');
-        listContainer.innerHTML = ''; // 以前の表示をクリア
+        listContainer.innerHTML = ''; // リセット
         
         quizSet.forEach((q, i) => {
             const li = document.createElement('li');
             li.style.borderBottom = "1px dashed #eee";
-            li.style.padding = "8px 0";
+            li.style.padding = "10px 0";
+            li.style.display = "flex"; // アイコンと文字を横並びにする
+            li.style.alignItems = "center"; // 垂直方向の中央に揃える
             
-            // 例：1問目：[解剖学] 第32回 問題 16
-            li.innerHTML = `<span style="color:#95a5a6; margin-right:10px;">${i + 1}.</span> <b>[${q.分野}]</b> ${q.開催回} ${q.問題番号}`;
+            // ◎ or ✖️ のアイコンを決定
+            let icon;
+            if (q.userCorrect) {
+                // 中が空洞の赤い丸（◎）：CSSで描画
+                icon = '<span style="display:inline-block; width:22px; height:22px; border-radius:50%; border:3px solid #e74c3c; margin-right:12px; box-sizing:border-box; background-color:transparent;"></span>';
+            } else {
+                // 青いバツ（✖️）：記号の色を変更
+                icon = '<span style="color:#3498db; margin-right:12px; font-size:1.4em; font-weight:bold; width:22px; text-align:center; box-sizing:border-box;">✖️</span>';
+            }
+            
+            // アイコン＋問題情報を合体
+            li.innerHTML = `${icon} <span style="color:#95a5a6; margin-right:5px; font-size:0.9em;">${i + 1}.</span> <b>[${q.分野}]</b> ${q.開催回} ${q.問題番号}`;
             listContainer.appendChild(li);
         });
         // ----------------------------------
