@@ -149,7 +149,12 @@
 <div id="result-area" class="result-area card">
     <h2 style="text-align:center;">終了！お疲れ様でした。</h2>
     <p id="final-score" style="font-size: 1.5em; text-align: center; margin: 20px 0;"></p>
-    <button class="btn-primary" onclick="location.reload()">最初に戻る</button>
+    
+    <div id="review-list-container" style="margin-top: 30px; border-top: 2px solid #f0f2f5; padding-top: 20px; text-align: left;">
+        <h3 style="font-size: 1.1em; color: #7f8c8d; margin-bottom: 15px;">📑 今回の出題リスト（復習用）</h3>
+        <ul id="review-list" style="list-style: none; padding: 0; font-size: 1rem; line-height: 2.2;"></ul>
+    </div>
+    <button class="btn-primary" onclick="location.reload()" style="margin-top: 30px;">最初に戻る</button>
 </div>
 
 <script>
@@ -277,11 +282,28 @@ function checkAnswer(selected, btn) {
 
 function nextQuestion() {
     currentIndex++;
-    if(currentIndex < quizSet.length) showQuestion();
-    else {
+    if(currentIndex < quizSet.length) {
+        showQuestion();
+    } else {
+        // 全問終了時の処理
         document.getElementById('quiz-area').classList.remove('active');
         document.getElementById('result-area').classList.add('active');
         document.getElementById('final-score').innerText = `${quizSet.length}問中 ${score}問 正解！`;
+
+        // --- 今回の出題リストを生成する処理 ---
+        const listContainer = document.getElementById('review-list');
+        listContainer.innerHTML = ''; // 以前の表示をクリア
+        
+        quizSet.forEach((q, i) => {
+            const li = document.createElement('li');
+            li.style.borderBottom = "1px dashed #eee";
+            li.style.padding = "8px 0";
+            
+            // 例：1問目：[解剖学] 第32回 問題 16
+            li.innerHTML = `<span style="color:#95a5a6; margin-right:10px;">${i + 1}.</span> <b>[${q.分野}]</b> ${q.開催回} ${q.問題番号}`;
+            listContainer.appendChild(li);
+        });
+        // ----------------------------------
     }
 }
 </script>
