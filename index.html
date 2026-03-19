@@ -26,7 +26,22 @@
             margin-bottom: 25px; 
         }
 
-        h1 { color: #1a2a3a; text-align: center; font-size: 1.8em; margin-bottom: 30px; }
+    /* PCやiPadなど、広い画面での設定 */
+h1 { 
+    color: #1a2a3a; 
+    text-align: center; 
+    font-size: 1.8em; 
+    margin-bottom: 30px; 
+    white-space: nowrap; /* 勝手に改行させないお守り */
+}
+
+/* iPhoneやAndroidなど、画面幅が600px以下の時の設定 */
+@media (max-width: 600px) {
+    h1 { 
+        font-size: 1.3em; /* スマホではサイズをギュッと絞る */
+        margin-bottom: 20px;
+    }
+}
 
         .setup-area, .quiz-area, .result-area { display: none; }
         .active { display: block; }
