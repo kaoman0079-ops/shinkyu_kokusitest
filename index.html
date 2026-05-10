@@ -5,29 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>はり・きゅう国家試験対策アプリ</title>
     <style>
-        /* 全体のベース：目に優しい背景色とゆったりした文字間隔 */
+        /* 全体のベース */
         body { 
             font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; 
             line-height: 1.8; 
             max-width: 850px; 
             margin: 0 auto; 
-            padding: 20px; 
+            padding: 60px 20px 20px; /* 上部にボタン用のスペースを確保 */
             background-color: #f0f2f5; 
             color: #2c3e50; 
             -webkit-font-smoothing: antialiased;
+            position: relative;
         }
 
-        /* --- 【追加】ポータルへ戻るボタンのスタイル --- */
+        /* --- 【修正版】メインカードの垂線に合わせたポータルボタン --- */
         .portal-back-btn {
-            position: fixed;
-            top: 15px;
-            left: 15px;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            /* 垂線を合わせるための計算：max-width 850px の半分(425px)に、padding 20px分を加味 */
+            transform: translateX(-425px); 
             z-index: 1000;
             text-decoration: none;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 10px 16px;
-            border-radius: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             border: 1px solid #E1E8ED;
             color: #3498DB;
             font-size: 0.85rem;
@@ -36,16 +39,22 @@
             align-items: center;
             transition: all 0.2s ease;
         }
-        .portal-back-btn:active {
-            transform: scale(0.95);
-            background: #f8f9fa;
-        }
-        @media (max-width: 600px) {
-            .portal-back-btn { padding: 8px 12px; font-size: 0.75rem; top: 10px; left: 10px; }
-        }
-        /* -------------------------------------- */
 
-        /* カード：余白を広げ、角を少し丸めて高級感を */
+        /* スマホ・タブレットなど画面幅が狭い時の挙動 */
+        @media (max-width: 900px) {
+            .portal-back-btn {
+                position: fixed;
+                left: 15px;
+                top: 15px;
+                transform: none;
+            }
+            body { padding-top: 70px; }
+        }
+
+        .portal-back-btn:active { transform: scale(0.95) translateX(-425px); background: #fff; }
+        @media (max-width: 900px) { .portal-back-btn:active { transform: scale(0.95); } }
+
+        /* カードデザイン */
         .card { 
             background: white; 
             padding: 35px; 
@@ -54,96 +63,44 @@
             margin-bottom: 25px; 
         }
 
-        /* PCやiPadなど、広い画面での設定 */
-        h1 { 
-            color: #1a2a3a; 
-            text-align: center; 
-            font-size: 1.8em; 
-            margin-bottom: 30px; 
-            white-space: nowrap;
-        }
-
-        /* iPhoneやAndroidなど、画面幅が600px以下の時の設定 */
-        @media (max-width: 600px) {
-            h1 { 
-                font-size: 1.3em; 
-                margin-bottom: 20px;
-            }
-        }
+        h1 { color: #1a2a3a; text-align: center; font-size: 1.8em; margin-bottom: 30px; white-space: nowrap; }
+        @media (max-width: 600px) { h1 { font-size: 1.3em; margin-bottom: 20px; } }
 
         .setup-area, .quiz-area, .result-area { display: none; }
         .active { display: block; }
 
         .option-btn { 
-            display: block; 
-            width: 100%; 
-            text-align: left; 
-            padding: 22px; 
-            margin: 15px 0; 
-            border: 2px solid #e0e6ed; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            background: #fff; 
-            font-size: 18px; 
-            color: #34495e;
-            transition: all 0.2s ease;
+            display: block; width: 100%; text-align: left; padding: 22px; margin: 15px 0; 
+            border: 2px solid #e0e6ed; border-radius: 12px; cursor: pointer; background: #fff; 
+            font-size: 18px; color: #34495e; transition: all 0.2s ease;
         }
-
-        .option-btn:hover:not(:disabled) { 
-            border-color: #3498db; 
-            background: #f0f9ff; 
-            transform: translateY(-1px);
-        }
+        .option-btn:hover:not(:disabled) { border-color: #3498db; background: #f0f9ff; transform: translateY(-1px); }
 
         .correct { background-color: #e8f5e9 !important; border-color: #4caf50 !important; color: #2e7d32; font-weight: bold; }
         .wrong { background-color: #ffebee !important; border-color: #ef5350 !important; color: #c62828; }
 
         .explanation { 
-            margin-top: 30px; 
-            padding: 25px; 
-            background: #fff9db; 
-            border-left: 8px solid #f1c40f; 
-            border-radius: 10px; 
-            display: none; 
-            font-size: 17px;
+            margin-top: 30px; padding: 25px; background: #fff9db; border-left: 8px solid #f1c40f; 
+            border-radius: 10px; display: none; font-size: 17px;
         }
         .explanation strong { color: #856404; display: block; margin-bottom: 12px; font-size: 1.2em; }
         .explanation p { margin: 8px 0; white-space: pre-wrap; line-height: 1.8; }
 
         .btn-primary { 
-            background: #3498db; 
-            color: white; 
-            border: none; 
-            padding: 20px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            font-size: 20px; 
-            width: 100%; 
-            font-weight: bold;
+            background: #3498db; color: white; border: none; padding: 20px; border-radius: 12px; 
+            cursor: pointer; font-size: 20px; width: 100%; font-weight: bold;
             box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
         }
         .btn-primary:disabled { background: #bdc3c7; cursor: not-allowed; box-shadow: none; }
 
         .btn-next { 
-            background: #2ecc71; 
-            color: white; 
-            border: none; 
-            padding: 22px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            width: 100%; 
-            margin-top: 20px; 
-            display: none; 
-            font-size: 20px; 
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
+            background: #2ecc71; color: white; border: none; padding: 22px; border-radius: 12px; 
+            cursor: pointer; width: 100%; margin-top: 20px; display: none; font-size: 20px; font-weight: bold;
         }
 
         select { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #dcdde1; margin-bottom: 20px; font-size: 17px; background: #fff; }
-        
         .status { text-align: center; font-size: 1em; color: #7f8c8d; margin-bottom: 15px; }
         .filter-group label { display: block; margin-bottom: 8px; font-size: 1em; color: #2c3e50; font-weight: bold; }
-        
         #quiz-progress { font-size: 1em; color: #95a5a6; margin-bottom: 15px; letter-spacing: 0.05em; }
         #question-text { font-weight: bold; font-size: 1.4em; margin-bottom: 30px; color: #2c3e50; line-height: 1.6; }
     </style>
@@ -151,7 +108,7 @@
 <body>
 
     <a href="https://kaoman0079-ops.github.io/Meridian-Node/" class="portal-back-btn">
-        🏠 Portal
+        <span style="margin-right: 6px; font-size: 1.1rem;">⏎</span> 🏠 Portal
     </a>
 
     <h1 style="text-align: center;">📍はり・きゅう国家試験対策アプリ♨️</h1>
@@ -163,7 +120,6 @@
         <span style="color: #2f3542; font-size: 0.9em; margin-left: 5px;">
             第34回（2026年度）データ実装済み
         </span>
-        
         <span style="margin-left: 15px; font-size: 0.9em; display: inline-block;">
             <a href="https://kaoman0079-ops.github.io/keiraku-master/" target="_blank" rel="noopener noreferrer" style="color: #3498db; text-decoration: none; margin-right: 15px;">
                 📖 経穴辞典
@@ -208,7 +164,6 @@
     <div id="result-area" class="result-area card">
         <h2 style="text-align:center;">終了！お疲れ様でした。</h2>
         <p id="final-score" style="font-size: 1.5em; text-align: center; margin: 20px 0;"></p>
-        
         <div id="review-list-container" style="margin-top: 30px; border-top: 2px solid #f0f2f5; padding-top: 20px; text-align: left;">
             <h3 style="font-size: 1.1em; color: #7f8c8d; margin-bottom: 15px;">📑 今回の出題リスト（復習用）</h3>
             <ul id="review-list" style="list-style: none; padding: 0; font-size: 1rem; line-height: 2.2;"></ul>
@@ -218,7 +173,6 @@
 
     <script>
         const DATA_URL = 'data.csv'; 
-
         let masterData = [];
         let quizSet = [];
         let currentIndex = 0;
@@ -229,18 +183,14 @@
                 const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
                 const csvText = await response.text();
                 masterData = parseCSV(csvText);
-                
                 if(masterData.length > 0) {
                     updateFilters(masterData);
                     document.getElementById('status-msg').innerText = `✅ データ同期完了：${masterData.length}問`;
                     document.getElementById('start-btn').disabled = false;
                     document.getElementById('start-btn').innerText = "学習開始！";
-                } else {
-                    throw new Error('データが空です');
                 }
             } catch (e) {
                 document.getElementById('status-msg').innerText = "⚠️ 同期失敗。data.csvを確認してください。";
-                console.error(e);
             }
         };
 
