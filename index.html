@@ -17,6 +17,34 @@
             -webkit-font-smoothing: antialiased;
         }
 
+        /* --- 【追加】ポータルへ戻るボタンのスタイル --- */
+        .portal-back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 16px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #E1E8ED;
+            color: #3498DB;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        .portal-back-btn:active {
+            transform: scale(0.95);
+            background: #f8f9fa;
+        }
+        @media (max-width: 600px) {
+            .portal-back-btn { padding: 8px 12px; font-size: 0.75rem; top: 10px; left: 10px; }
+        }
+        /* -------------------------------------- */
+
         /* カード：余白を広げ、角を少し丸めて高級感を */
         .card { 
             background: white; 
@@ -26,27 +54,26 @@
             margin-bottom: 25px; 
         }
 
-    /* PCやiPadなど、広い画面での設定 */
-h1 { 
-    color: #1a2a3a; 
-    text-align: center; 
-    font-size: 1.8em; 
-    margin-bottom: 30px; 
-    white-space: nowrap; /* 勝手に改行させないお守り */
-}
+        /* PCやiPadなど、広い画面での設定 */
+        h1 { 
+            color: #1a2a3a; 
+            text-align: center; 
+            font-size: 1.8em; 
+            margin-bottom: 30px; 
+            white-space: nowrap;
+        }
 
-/* iPhoneやAndroidなど、画面幅が600px以下の時の設定 */
-@media (max-width: 600px) {
-    h1 { 
-        font-size: 1.3em; /* スマホではサイズをギュッと絞る */
-        margin-bottom: 20px;
-    }
-}
+        /* iPhoneやAndroidなど、画面幅が600px以下の時の設定 */
+        @media (max-width: 600px) {
+            h1 { 
+                font-size: 1.3em; 
+                margin-bottom: 20px;
+            }
+        }
 
         .setup-area, .quiz-area, .result-area { display: none; }
         .active { display: block; }
 
-        /* 選択肢ボタン：文字を大きく、押しやすく（iPadのタップに最適化） */
         .option-btn { 
             display: block; 
             width: 100%; 
@@ -57,7 +84,7 @@ h1 {
             border-radius: 12px; 
             cursor: pointer; 
             background: #fff; 
-            font-size: 18px; /* 16pxから18pxへ拡大 */
+            font-size: 18px; 
             color: #34495e;
             transition: all 0.2s ease;
         }
@@ -68,11 +95,9 @@ h1 {
             transform: translateY(-1px);
         }
 
-        /* 正解・不正解の色：コントラストをはっきりさせつつ、どぎつくない色に */
         .correct { background-color: #e8f5e9 !important; border-color: #4caf50 !important; color: #2e7d32; font-weight: bold; }
         .wrong { background-color: #ffebee !important; border-color: #ef5350 !important; color: #c62828; }
 
-        /* 解説ボックス：最も重要な場所なので、背景を落ち着いた黄色に */
         .explanation { 
             margin-top: 30px; 
             padding: 25px; 
@@ -85,7 +110,6 @@ h1 {
         .explanation strong { color: #856404; display: block; margin-bottom: 12px; font-size: 1.2em; }
         .explanation p { margin: 8px 0; white-space: pre-wrap; line-height: 1.8; }
 
-        /* ボタン類：力強く、押し間違いのないサイズ */
         .btn-primary { 
             background: #3498db; 
             color: white; 
@@ -115,241 +139,216 @@ h1 {
             box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
         }
 
-        /* セレクトボックス：iPadで選択しやすい高さ */
         select { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #dcdde1; margin-bottom: 20px; font-size: 17px; background: #fff; }
         
         .status { text-align: center; font-size: 1em; color: #7f8c8d; margin-bottom: 15px; }
         .filter-group label { display: block; margin-bottom: 8px; font-size: 1em; color: #2c3e50; font-weight: bold; }
         
-        /* 進行状況：さりげなく、でも読みやすく */
         #quiz-progress { font-size: 1em; color: #95a5a6; margin-bottom: 15px; letter-spacing: 0.05em; }
         #question-text { font-weight: bold; font-size: 1.4em; margin-bottom: 30px; color: #2c3e50; line-height: 1.6; }
     </style>
 </head>
 <body>
 
+    <a href="https://kaoman0079-ops.github.io/Meridian-Node/" class="portal-back-btn">
+        🏠 Portal
+    </a>
+
     <h1 style="text-align: center;">📍はり・きゅう国家試験対策アプリ♨️</h1>
-<div style="text-align: center; margin-bottom: 20px;">
-    <span style="background-color: #ff4757; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold;">
-        NEW
-    </span>
-    <span style="color: #2f3542; font-size: 0.9em; margin-left: 5px;">
-        第34回（2026年度）データ実装済み
-    </span>
-    
-    <span style="margin-left: 15px; font-size: 0.9em; display: inline-block;">
-        <a href="https://kaoman0079-ops.github.io/keiraku-master/" target="_blank" rel="noopener noreferrer" style="color: #3498db; text-decoration: none; margin-right: 15px;">
-            📖 経穴辞典
-        </a>
-        <a href="https://kaoman0079-ops.github.io/keiraku-master/quiz.html" target="_blank" rel="noopener noreferrer" style="color: #3498db; text-decoration: none;">
-            🧠 経絡クイズ
-        </a>
-    </span>
-</div>
 
-
-<div id="setup-area" class="card active">
-    <div id="status-msg" class="status">データ同期中...</div>
-    <div class="filter-group">
-        <label><b>開催回</b></label>
-        <select id="filter-year"><option value="all">すべて</option></select>
-        <label><b>分野</b></label>
-        <select id="filter-subject"><option value="all">すべて</option></select>
-        <label><b>出題数</b></label>
-        <select id="quiz-count">
-            <option value="5">5問</option>
-            <option value="10">10問</option>
-            <option value="30">30問</option>
-            <option value="999">無限（全対象）</option>
-        </select>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <span style="background-color: #ff4757; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold;">
+            NEW
+        </span>
+        <span style="color: #2f3542; font-size: 0.9em; margin-left: 5px;">
+            第34回（2026年度）データ実装済み
+        </span>
+        
+        <span style="margin-left: 15px; font-size: 0.9em; display: inline-block;">
+            <a href="https://kaoman0079-ops.github.io/keiraku-master/" target="_blank" rel="noopener noreferrer" style="color: #3498db; text-decoration: none; margin-right: 15px;">
+                📖 経穴辞典
+            </a>
+            <a href="https://kaoman0079-ops.github.io/keiraku-master/quiz.html" target="_blank" rel="noopener noreferrer" style="color: #3498db; text-decoration: none;">
+                🧠 経絡クイズ
+            </a>
+        </span>
     </div>
-    <button id="start-btn" class="btn-primary" onclick="startQuiz()" disabled>同期をお待ちください</button>
-</div>
 
-<div id="quiz-area" class="quiz-area">
-    <div class="card">
-        <div id="quiz-progress" style="font-size: 0.85em; color: #666; margin-bottom: 10px;"></div>
-        <div id="question-text" style="font-weight: bold; font-size: 1.2em; margin-bottom: 25px;"></div>
-        <div id="options-container"></div>
-        <div id="explanation-box" class="explanation">
-            <strong>💡 解説</strong>
-            <div id="explanation-text"></div>
+    <div id="setup-area" class="card active">
+        <div id="status-msg" class="status">データ同期中...</div>
+        <div class="filter-group">
+            <label><b>開催回</b></label>
+            <select id="filter-year"><option value="all">すべて</option></select>
+            <label><b>分野</b></label>
+            <select id="filter-subject"><option value="all">すべて</option></select>
+            <label><b>出題数</b></label>
+            <select id="quiz-count">
+                <option value="5">5問</option>
+                <option value="10">10問</option>
+                <option value="30">30問</option>
+                <option value="999">無限（全対象）</option>
+            </select>
         </div>
-        <button id="next-btn" class="btn-next" onclick="nextQuestion()">次の問題へ進む ➔</button>
+        <button id="start-btn" class="btn-primary" onclick="startQuiz()" disabled>同期をお待ちください</button>
     </div>
-</div>
 
-<div id="result-area" class="result-area card">
-    <h2 style="text-align:center;">終了！お疲れ様でした。</h2>
-    <p id="final-score" style="font-size: 1.5em; text-align: center; margin: 20px 0;"></p>
-    
-    <div id="review-list-container" style="margin-top: 30px; border-top: 2px solid #f0f2f5; padding-top: 20px; text-align: left;">
-        <h3 style="font-size: 1.1em; color: #7f8c8d; margin-bottom: 15px;">📑 今回の出題リスト（復習用）</h3>
-        <ul id="review-list" style="list-style: none; padding: 0; font-size: 1rem; line-height: 2.2;"></ul>
+    <div id="quiz-area" class="quiz-area">
+        <div class="card">
+            <div id="quiz-progress" style="font-size: 0.85em; color: #666; margin-bottom: 10px;"></div>
+            <div id="question-text" style="font-weight: bold; font-size: 1.2em; margin-bottom: 25px;"></div>
+            <div id="options-container"></div>
+            <div id="explanation-box" class="explanation">
+                <strong>💡 解説</strong>
+                <div id="explanation-text"></div>
+            </div>
+            <button id="next-btn" class="btn-next" onclick="nextQuestion()">次の問題へ進む ➔</button>
+        </div>
     </div>
-    <button class="btn-primary" onclick="location.reload()" style="margin-top: 30px;">最初に戻る</button>
-</div>
 
-<script>
-const DATA_URL = 'data.csv'; 
-
-let masterData = [];
-let quizSet = [];
-let currentIndex = 0;
-let score = 0;
-
-window.onload = async function() {
-    try {
-        const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
-        const csvText = await response.text();
-        masterData = parseCSV(csvText);
+    <div id="result-area" class="result-area card">
+        <h2 style="text-align:center;">終了！お疲れ様でした。</h2>
+        <p id="final-score" style="font-size: 1.5em; text-align: center; margin: 20px 0;"></p>
         
-        if(masterData.length > 0) {
-            updateFilters(masterData);
-            document.getElementById('status-msg').innerText = `✅ データ同期完了：${masterData.length}問`;
-            document.getElementById('start-btn').disabled = false;
-            document.getElementById('start-btn').innerText = "学習開始！";
-        } else {
-            throw new Error('データが空です');
-        }
-    } catch (e) {
-        document.getElementById('status-msg').innerText = "⚠️ 同期失敗。data.csvが正しい場所にあり、見出しが合っているか確認してください。";
-        console.error(e);
-    }
-};
+        <div id="review-list-container" style="margin-top: 30px; border-top: 2px solid #f0f2f5; padding-top: 20px; text-align: left;">
+            <h3 style="font-size: 1.1em; color: #7f8c8d; margin-bottom: 15px;">📑 今回の出題リスト（復習用）</h3>
+            <ul id="review-list" style="list-style: none; padding: 0; font-size: 1rem; line-height: 2.2;"></ul>
+        </div>
+        <button class="btn-primary" onclick="location.reload()" style="margin-top: 30px;">最初に戻る</button>
+    </div>
 
-function parseCSV(text) {
-    const lines = text.trim().split(/\r?\n/);
-    if(lines.length < 2) return [];
-    
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    return lines.slice(1).map(line => {
-        const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-        let obj = {};
-        headers.forEach((h, i) => {
-            let val = values[i] ? values[i].trim().replace(/^"|"$/g, '').replace(/""/g, '"') : "";
-            obj[h] = val;
-        });
-        return obj;
-    });
-}
+    <script>
+        const DATA_URL = 'data.csv'; 
 
-function updateFilters(data) {
-    const years = [...new Set(data.map(q => q.開催回))].filter(Boolean).sort().reverse();
-    const subjects = [...new Set(data.map(q => q.分野))].filter(Boolean).sort();
-    
-    const ys = document.getElementById('filter-year');
-    years.forEach(y => { ys.innerHTML += `<option value="${y}">${y}</option>`; });
-    
-    const ss = document.getElementById('filter-subject');
-    subjects.forEach(s => { ss.innerHTML += `<option value="${s}">${s}</option>`; });
-}
+        let masterData = [];
+        let quizSet = [];
+        let currentIndex = 0;
+        let score = 0;
 
-function startQuiz() {
-    const year = document.getElementById('filter-year').value;
-    const subject = document.getElementById('filter-subject').value;
-    const count = parseInt(document.getElementById('quiz-count').value);
-    
-    quizSet = masterData.filter(q => (year === 'all' || q.開催回 === year) && (subject === 'all' || q.分野 === subject));
-    
-    if(quizSet.length === 0) {
-        alert("条件に合う問題がありませんでした。");
-        return;
-    }
-
-    quizSet.sort(() => Math.random() - 0.5);
-    if(count < quizSet.length) quizSet = quizSet.slice(0, count);
-    
-    currentIndex = 0; score = 0;
-    document.getElementById('setup-area').style.display = 'none';
-    document.getElementById('quiz-area').classList.add('active');
-    showQuestion();
-}
-
-function showQuestion() {
-    const q = quizSet[currentIndex];
-    // CSVの「問題 16」をそのまま表示。余計な「問」は足しません。
-    document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}] - ${q.開催回} ${q.問題番号}`;
-    document.getElementById('question-text').innerText = q.問題文;
-    
-    const container = document.getElementById('options-container');
-    container.innerHTML = '';
-    
-    for(let i=1; i<=4; i++) {
-        const btn = document.createElement('button');
-        btn.className = 'option-btn';
-        btn.innerText = q[`選択肢${i}`];
-        btn.onclick = () => checkAnswer(i, btn);
-        container.appendChild(btn);
-    }
-    document.getElementById('explanation-box').style.display = 'none';
-    document.getElementById('next-btn').style.display = 'none';
-}
-    
-function checkAnswer(selected, btn) {
-    const q = quizSet[currentIndex];
-    const correct = parseInt(q.正解);
-    const btns = document.querySelectorAll('.option-btn');
-    btns.forEach(b => b.disabled = true);
-
-    if(selected === correct) {
-        btn.classList.add('correct');
-        score++;
-        q.userCorrect = true;  // ★ここを追加！正解したことをデータに記録します
-    } else {
-        btn.classList.add('wrong');
-        if(btns[correct-1]) btns[correct-1].classList.add('correct');
-        q.userCorrect = false; // ★ここを追加！間違えたことも記録します
-    }
-    
-    // （解説表示などの続きのコード...）
-    const expBox = document.getElementById('explanation-box');
-    const expText = document.getElementById('explanation-text');
-    expBox.style.display = 'block';
-    let explanationHTML = `<p><b>正解：${q['選択肢'+correct]}</b></p>`;
-    if (q.解説) { explanationHTML += `<hr style="border:0; border-top:1px solid #e9d7a5; margin:10px 0;"><p>${q.解説}</p>`; }
-    expText.innerHTML = explanationHTML;
-    document.getElementById('next-btn').style.display = 'block';
-}
-
-function nextQuestion() {
-    currentIndex++;
-    if(currentIndex < quizSet.length) {
-        showQuestion();
-    } else {
-        // 全問終了時の処理
-        document.getElementById('quiz-area').classList.remove('active');
-        document.getElementById('result-area').classList.add('active');
-        document.getElementById('final-score').innerText = `${quizSet.length}問中 ${score}問 正解！`;
-
-        // --- ここから追加：中が空洞の赤い丸（◎）アイコン付きリストの生成 ---
-        const listContainer = document.getElementById('review-list');
-        listContainer.innerHTML = ''; // リセット
-        
-        quizSet.forEach((q, i) => {
-            const li = document.createElement('li');
-            li.style.borderBottom = "1px dashed #eee";
-            li.style.padding = "10px 0";
-            li.style.display = "flex"; // アイコンと文字を横並びにする
-            li.style.alignItems = "center"; // 垂直方向の中央に揃える
-            
-            // ◎ or ✖️ のアイコンを決定
-            let icon;
-            if (q.userCorrect) {
-                // 中が空洞の赤い丸（◎）：CSSで描画
-                icon = '<span style="display:inline-block; width:22px; height:22px; border-radius:50%; border:3px solid #e74c3c; margin-right:12px; box-sizing:border-box; background-color:transparent;"></span>';
-            } else {
-                // 青いバツ（✖️）：記号の色を変更
-                icon = '<span style="color:#3498db; margin-right:12px; font-size:1.4em; font-weight:bold; width:22px; text-align:center; box-sizing:border-box;">✖️</span>';
+        window.onload = async function() {
+            try {
+                const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
+                const csvText = await response.text();
+                masterData = parseCSV(csvText);
+                
+                if(masterData.length > 0) {
+                    updateFilters(masterData);
+                    document.getElementById('status-msg').innerText = `✅ データ同期完了：${masterData.length}問`;
+                    document.getElementById('start-btn').disabled = false;
+                    document.getElementById('start-btn').innerText = "学習開始！";
+                } else {
+                    throw new Error('データが空です');
+                }
+            } catch (e) {
+                document.getElementById('status-msg').innerText = "⚠️ 同期失敗。data.csvを確認してください。";
+                console.error(e);
             }
-            
-            // アイコン＋問題情報を合体
-            li.innerHTML = `${icon} <span style="color:#95a5a6; margin-right:5px; font-size:0.9em;">${i + 1}.</span> <b>[${q.分野}]</b> ${q.開催回} ${q.問題番号}`;
-            listContainer.appendChild(li);
-        });
-        // ----------------------------------
-    }
-}
-</script>
+        };
+
+        function parseCSV(text) {
+            const lines = text.trim().split(/\r?\n/);
+            if(lines.length < 2) return [];
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            return lines.slice(1).map(line => {
+                const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                let obj = {};
+                headers.forEach((h, i) => {
+                    let val = values[i] ? values[i].trim().replace(/^"|"$/g, '').replace(/""/g, '"') : "";
+                    obj[h] = val;
+                });
+                return obj;
+            });
+        }
+
+        function updateFilters(data) {
+            const years = [...new Set(data.map(q => q.開催回))].filter(Boolean).sort().reverse();
+            const subjects = [...new Set(data.map(q => q.分野))].filter(Boolean).sort();
+            const ys = document.getElementById('filter-year');
+            years.forEach(y => { ys.innerHTML += `<option value="${y}">${y}</option>`; });
+            const ss = document.getElementById('filter-subject');
+            subjects.forEach(s => { ss.innerHTML += `<option value="${s}">${s}</option>`; });
+        }
+
+        function startQuiz() {
+            const year = document.getElementById('filter-year').value;
+            const subject = document.getElementById('filter-subject').value;
+            const count = parseInt(document.getElementById('quiz-count').value);
+            quizSet = masterData.filter(q => (year === 'all' || q.開催回 === year) && (subject === 'all' || q.分野 === subject));
+            if(quizSet.length === 0) { alert("条件に合う問題がありませんでした。"); return; }
+            quizSet.sort(() => Math.random() - 0.5);
+            if(count < quizSet.length) quizSet = quizSet.slice(0, count);
+            currentIndex = 0; score = 0;
+            document.getElementById('setup-area').style.display = 'none';
+            document.getElementById('quiz-area').classList.add('active');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = quizSet[currentIndex];
+            document.getElementById('quiz-progress').innerText = `${currentIndex + 1}/${quizSet.length}問 [${q.分野}] - ${q.開催回} ${q.問題番号}`;
+            document.getElementById('question-text').innerText = q.問題文;
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            for(let i=1; i<=4; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = q[`選択肢${i}`];
+                btn.onclick = () => checkAnswer(i, btn);
+                container.appendChild(btn);
+            }
+            document.getElementById('explanation-box').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function checkAnswer(selected, btn) {
+            const q = quizSet[currentIndex];
+            const correct = parseInt(q.正解);
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.disabled = true);
+            if(selected === correct) {
+                btn.classList.add('correct');
+                score++;
+                q.userCorrect = true;
+            } else {
+                btn.classList.add('wrong');
+                if(btns[correct-1]) btns[correct-1].classList.add('correct');
+                q.userCorrect = false;
+            }
+            const expBox = document.getElementById('explanation-box');
+            const expText = document.getElementById('explanation-text');
+            expBox.style.display = 'block';
+            let explanationHTML = `<p><b>正解：${q['選択肢'+correct]}</b></p>`;
+            if (q.解説) { explanationHTML += `<hr style="border:0; border-top:1px solid #e9d7a5; margin:10px 0;"><p>${q.解説}</p>`; }
+            expText.innerHTML = explanationHTML;
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if(currentIndex < quizSet.length) {
+                showQuestion();
+            } else {
+                document.getElementById('quiz-area').classList.remove('active');
+                document.getElementById('result-area').classList.add('active');
+                document.getElementById('final-score').innerText = `${quizSet.length}問中 ${score}問 正解！`;
+                const listContainer = document.getElementById('review-list');
+                listContainer.innerHTML = ''; 
+                quizSet.forEach((q, i) => {
+                    const li = document.createElement('li');
+                    li.style.borderBottom = "1px dashed #eee";
+                    li.style.padding = "10px 0";
+                    li.style.display = "flex";
+                    li.style.alignItems = "center";
+                    let icon;
+                    if (q.userCorrect) {
+                        icon = '<span style="display:inline-block; width:22px; height:22px; border-radius:50%; border:3px solid #e74c3c; margin-right:12px; box-sizing:border-box; background-color:transparent;"></span>';
+                    } else {
+                        icon = '<span style="color:#3498db; margin-right:12px; font-size:1.4em; font-weight:bold; width:22px; text-align:center; box-sizing:border-box;">✖️</span>';
+                    }
+                    li.innerHTML = `${icon} <span style="color:#95a5a6; margin-right:5px; font-size:0.9em;">${i + 1}.</span> <b>[${q.分野}]</b> ${q.開催回} ${q.問題番号}`;
+                    listContainer.appendChild(li);
+                });
+            }
+        }
+    </script>
 </body>
 </html>
