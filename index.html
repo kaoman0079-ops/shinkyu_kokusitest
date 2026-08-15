@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>国家試験対策演習アプリ</title>
     <style>
-        /* --- カラーパレット & デザイン変数 --- */
         :root {
             --primary: #3b82f6;
             --primary-hover: #2563eb;
@@ -23,11 +22,7 @@
             --warning-border: #f59e0b;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -65,36 +60,15 @@
         }
 
         @media (max-width: 840px) {
-            .portal-back-btn {
-                position: fixed;
-                left: 16px;
-                top: 16px;
-                transform: none;
-            }
+            .portal-back-btn { position: fixed; left: 16px; top: 16px; transform: none; }
             body { padding-top: 75px; }
         }
 
-        .portal-back-btn:hover {
-            background: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+        .portal-back-btn:hover { background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-        /* --- ヘッダー --- */
-        .app-header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-        .app-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+        .app-header { text-align: center; margin-bottom: 24px; }
+        .app-title { font-size: 1.5rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* --- カード --- */
         .card { 
             background: var(--card-bg); 
             padding: 28px; 
@@ -108,7 +82,6 @@
         .setup-area, .quiz-area, .result-area { display: none; }
         .active { display: block; }
 
-        /* --- 設定画面 --- */
         .status {
             text-align: center;
             font-size: 0.9rem;
@@ -120,26 +93,11 @@
             font-weight: 600;
         }
 
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
+        .filter-group { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        .form-control { display: flex; flex-direction: column; gap: 6px; }
+        .form-control label { font-size: 0.88rem; font-weight: 700; color: #334155; }
 
-        .form-control {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-control label {
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: #334155;
-        }
-
-        select { 
+        select, input[type="number"] { 
             width: 100%; 
             padding: 12px 16px; 
             border-radius: 12px; 
@@ -151,11 +109,11 @@
             transition: border-color 0.2s;
         }
 
-        select:focus {
-            border-color: var(--primary);
-        }
+        select:focus, input[type="number"]:focus { border-color: var(--primary); }
 
-        /* --- ボタン共通 --- */
+        .range-inputs { display: flex; align-items: center; gap: 8px; }
+        .range-inputs span { color: var(--text-sub); font-weight: 700; }
+
         .btn-primary { 
             background: var(--primary); 
             color: white; 
@@ -170,84 +128,21 @@
             transition: all 0.2s ease;
         }
 
-        .btn-primary:hover:not(:disabled) {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-        }
+        .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
 
-        .btn-primary:disabled { 
-            background: #cbd5e1; 
-            cursor: not-allowed; 
-            box-shadow: none; 
-        }
+        .quiz-meta { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .progress-bar-container { width: 100%; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+        .quiz-info-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-sub); font-weight: 700; }
 
-        /* --- 問題演習画面 --- */
-        .quiz-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .category-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+        .badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; background: #f1f5f9; color: #475569; font-weight: 600; }
+        .badge-subject { background: #e0f2fe; color: #0369a1; }
 
-        .progress-bar-container {
-            width: 100%;
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 10px;
-            overflow: hidden;
-        }
+        #question-text { font-weight: 700; font-size: 1.15rem; margin-bottom: 24px; color: var(--text-main); line-height: 1.7; }
 
-        .progress-bar {
-            height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .quiz-info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-            color: var(--text-sub);
-            font-weight: 700;
-        }
-
-        .category-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .badge {
-            font-size: 0.75rem;
-            padding: 3px 8px;
-            border-radius: 6px;
-            background: #f1f5f9;
-            color: #475569;
-            font-weight: 600;
-        }
-
-        .badge-subject {
-            background: #e0f2fe;
-            color: #0369a1;
-        }
-
-        #question-text { 
-            font-weight: 700; 
-            font-size: 1.15rem; 
-            margin-bottom: 24px; 
-            color: var(--text-main); 
-            line-height: 1.7; 
-        }
-
-        /* 選択肢ボタン */
-        .options-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        .options-grid { display: flex; flex-direction: column; gap: 12px; }
         .option-btn { 
             display: flex;
             align-items: flex-start;
@@ -280,39 +175,15 @@
             margin-top: 1px;
         }
 
-        .option-btn:hover:not(:disabled) { 
-            border-color: var(--primary); 
-            background: var(--primary-light); 
-        }
+        .option-btn:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-light); }
+        .option-btn:hover:not(:disabled) .option-num { background: var(--primary); color: white; }
 
-        .option-btn:hover:not(:disabled) .option-num {
-            background: var(--primary);
-            color: white;
-        }
+        .correct { background-color: var(--success-bg) !important; border-color: var(--success) !important; color: #065f46 !important; font-weight: 600; }
+        .correct .option-num { background: var(--success) !important; color: white !important; }
 
-        /* 正解・不正解判定 */
-        .correct { 
-            background-color: var(--success-bg) !important; 
-            border-color: var(--success) !important; 
-            color: #065f46 !important; 
-            font-weight: 600; 
-        }
-        .correct .option-num {
-            background: var(--success) !important;
-            color: white !important;
-        }
+        .wrong { background-color: var(--error-bg) !important; border-color: var(--error) !important; color: #991b1b !important; }
+        .wrong .option-num { background: var(--error) !important; color: white !important; }
 
-        .wrong { 
-            background-color: var(--error-bg) !important; 
-            border-color: var(--error) !important; 
-            color: #991b1b !important; 
-        }
-        .wrong .option-num {
-            background: var(--error) !important;
-            color: white !important;
-        }
-
-        /* 解説カード */
         .explanation { 
             margin-top: 24px; 
             padding: 20px; 
@@ -325,24 +196,10 @@
             animation: fadeIn 0.3s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-        .explanation-title { 
-            color: #b45309; 
-            font-weight: 800; 
-            font-size: 1rem; 
-            margin-bottom: 8px; 
-        }
-
-        .explanation p { 
-            margin: 6px 0; 
-            white-space: pre-wrap; 
-            line-height: 1.7; 
-            color: #451a03;
-        }
+        .explanation-title { color: #b45309; font-weight: 800; font-size: 1rem; margin-bottom: 8px; }
+        .explanation p { margin: 6px 0; white-space: pre-wrap; line-height: 1.7; color: #451a03; }
 
         .btn-next { 
             background: var(--success); 
@@ -360,97 +217,35 @@
             transition: all 0.2s ease;
         }
 
-        .btn-next:hover {
-            background: #059669;
-            transform: translateY(-1px);
-        }
+        .btn-next:hover { background: #059669; transform: translateY(-1px); }
 
-        /* --- 結果画面 --- */
-        .result-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
+        .result-header { text-align: center; margin-bottom: 20px; }
         .score-circle {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: var(--primary-light);
-            color: var(--primary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 20px auto;
-            border: 3px solid #bfdbfe;
+            width: 120px; height: 120px; border-radius: 50%; background: var(--primary-light);
+            color: var(--primary); display: flex; flex-direction: column; align-items: center;
+            justify-content: center; margin: 20px auto; border: 3px solid #bfdbfe;
         }
+        .score-num { font-size: 2.2rem; font-weight: 900; line-height: 1; }
+        .score-label { font-size: 0.75rem; font-weight: 700; color: var(--text-sub); margin-top: 4px; }
 
-        .score-num {
-            font-size: 2.2rem;
-            font-weight: 900;
-            line-height: 1;
-        }
-
-        .score-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text-sub);
-            margin-top: 4px;
-        }
-
-        .review-section {
-            margin-top: 24px;
-            border-top: 1px solid var(--border);
-            padding-top: 20px;
-        }
-
-        .review-title {
-            font-size: 1rem;
-            color: var(--text-sub);
-            margin-bottom: 12px;
-            font-weight: 700;
-        }
-
-        .review-list {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .review-item {
-            padding: 10px 12px;
-            background: #f8fafc;
-            border-radius: 10px;
-            border: 1px solid #f1f5f9;
-            display: flex;
-            align-items: center;
-            font-size: 0.9rem;
-        }
-
-        .review-icon {
-            margin-right: 10px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            width: 24px;
-            text-align: center;
-        }
+        .review-section { margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px; }
+        .review-title { font-size: 1rem; color: var(--text-sub); margin-bottom: 12px; font-weight: 700; }
+        .review-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+        .review-item { padding: 10px 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9; display: flex; align-items: center; font-size: 0.9rem; }
+        .review-icon { margin-right: 10px; font-weight: bold; font-size: 1.1rem; width: 24px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <!-- ポータル戻るボタン -->
     <a href="https://kaoman0079-ops.github.io/Meridian-Node/" class="portal-back-btn">
         <span>⏎</span> 🏠 Portal
     </a>
 
-    <!-- ヘッダー -->
     <div class="app-header">
         <h1 class="app-title">📍 国家試験対策演習</h1>
     </div>
 
-    <!-- 条件選択画面 -->
+    <!-- 条件設定画面 -->
     <div id="setup-area" class="card active">
         <div id="status-msg" class="status">データ同期中...</div>
         
@@ -465,13 +260,33 @@
                 <select id="filter-subject"><option value="all">すべて（全教科）</option></select>
             </div>
 
+            <!-- 問題番号の範囲指定 -->
             <div class="form-control">
-                <label for="quiz-count">出題数</label>
+                <label>出題番号の範囲（例: 1〜20番）</label>
+                <div class="range-inputs">
+                    <input type="number" id="num-start" placeholder="開始 (1)" min="1">
+                    <span>〜</span>
+                    <input type="number" id="num-end" placeholder="終了 (20)" min="1">
+                </div>
+            </div>
+
+            <!-- 出題順（ランダム / 順番通り） -->
+            <div class="form-control">
+                <label for="order-mode">出題の順番</label>
+                <select id="order-mode">
+                    <option value="sequential">教科・番号順（順番に解く）</option>
+                    <option value="random">ランダム（シャッフル）</option>
+                </select>
+            </div>
+
+            <div class="form-control">
+                <label for="quiz-count">最大出題数</label>
                 <select id="quiz-count">
                     <option value="5">5問</option>
                     <option value="10" selected>10問</option>
+                    <option value="20">20問</option>
                     <option value="30">30問</option>
-                    <option value="999">全問（無限演習）</option>
+                    <option value="999">範囲内の全問を解く</option>
                 </select>
             </div>
         </div>
@@ -497,7 +312,6 @@
             </div>
 
             <div id="question-text"></div>
-            
             <div id="options-container" class="options-grid"></div>
 
             <div id="explanation-box" class="explanation">
@@ -552,7 +366,6 @@
             }
         };
 
-        // CSVパース（新旧ヘッダー両方に対応）
         function parseCSV(text) {
             const lines = text.trim().split(/\r?\n/);
             if(lines.length < 2) return [];
@@ -570,7 +383,6 @@
             });
         }
 
-        // フィルター選択肢の生成
         function updateFilters(data) {
             const years = [...new Set(data.map(q => q.試験の回数 || q.開催回))].filter(Boolean).sort().reverse();
             const subjects = [...new Set(data.map(q => q.教科 || q.分野))].filter(Boolean).sort();
@@ -582,24 +394,50 @@
             subjects.forEach(s => { ss.innerHTML += `<option value="${s}">${s}</option>`; });
         }
 
-        // 演習スタート
         function startQuiz() {
             const year = document.getElementById('filter-year').value;
             const subject = document.getElementById('filter-subject').value;
+            const startNum = parseInt(document.getElementById('num-start').value) || null;
+            const endNum = parseInt(document.getElementById('num-end').value) || null;
+            const orderMode = document.getElementById('order-mode').value;
             const count = parseInt(document.getElementById('quiz-count').value);
             
+            // フィルタリング処理
             quizSet = masterData.filter(q => {
                 const qYear = q.試験の回数 || q.開催回;
                 const qSubject = q.教科 || q.分野;
-                return (year === 'all' || qYear === year) && (subject === 'all' || qSubject === subject);
+                
+                // 問題番号の判定（通し番号 or 試験の番号）
+                const qNumStr = q.通し番号 || q.試験の番号 || q.問題番号 || "0";
+                const qNum = parseInt(qNumStr.replace(/[^0-9]/g, '')); 
+
+                const matchYear = (year === 'all' || qYear === year);
+                const matchSubject = (subject === 'all' || qSubject === subject);
+                
+                let matchRange = true;
+                if (startNum !== null && qNum < startNum) matchRange = false;
+                if (endNum !== null && qNum > endNum) matchRange = false;
+
+                return matchYear && matchSubject && matchRange;
             });
 
             if(quizSet.length === 0) { 
-                alert("指定した条件に該当する問題が見つかりませんでした。"); 
+                alert("指定した条件・番号範囲に該当する問題が見つかりませんでした。"); 
                 return; 
             }
 
-            quizSet.sort(() => Math.random() - 0.5);
+            // 出題順の制御（ランダム or 順番通り）
+            if (orderMode === 'random') {
+                quizSet.sort(() => Math.random() - 0.5);
+            } else {
+                // 教科・番号順に整列
+                quizSet.sort((a, b) => {
+                    const numA = parseInt((a.通し番号 || a.試験の番号 || "0").replace(/[^0-9]/g, ''));
+                    const numB = parseInt((b.通し番号 || b.試験の番号 || "0").replace(/[^0-9]/g, ''));
+                    return numA - numB;
+                });
+            }
+
             if(count < quizSet.length) quizSet = quizSet.slice(0, count);
 
             currentIndex = 0; 
@@ -610,19 +448,17 @@
             showQuestion();
         }
 
-        // 問題画面表示
         function showQuestion() {
             const q = quizSet[currentIndex];
             
-            // プログレスバー & 進捗表記
             const progressPercent = ((currentIndex + 1) / quizSet.length) * 100;
             document.getElementById('progress-bar').style.width = `${progressPercent}%`;
             document.getElementById('quiz-progress-text').innerText = `${currentIndex + 1} / ${quizSet.length}問`;
             
-            const examInfo = `${q.試験の回数 || q.開催回 || ''} ${q.試験の番号 || q.問題番号 || ''}`;
+            const qNumDisp = q.通し番号 ? `No.${q.通し番号}` : (q.試験の番号 || q.問題番号 || '');
+            const examInfo = `${q.試験の回数 || q.開催回 || ''} ${qNumDisp}`;
             document.getElementById('quiz-exam-info').innerText = examInfo;
 
-            // カテゴリバッジ（教科・大項目・中項目）
             const subjectText = q.教科 || q.分野 || '';
             document.getElementById('badge-subject').innerText = subjectText;
 
@@ -635,10 +471,8 @@
                 categoryBadge.style.display = 'none';
             }
 
-            // 問題文
             document.getElementById('question-text').innerText = q.問題 || q.問題文;
 
-            // 選択肢
             const container = document.getElementById('options-container');
             container.innerHTML = '';
             
@@ -660,7 +494,6 @@
             document.getElementById('next-btn').style.display = 'none';
         }
 
-        // 解答チェック
         function checkAnswer(selected, btn) {
             const q = quizSet[currentIndex];
             const rawAnswer = q.答え || q.正解;
@@ -679,7 +512,6 @@
                 q.userCorrect = false;
             }
 
-            // 解説枠の描画
             const expBox = document.getElementById('explanation-box');
             const expText = document.getElementById('explanation-text');
             expBox.style.display = 'block';
@@ -695,7 +527,6 @@
             document.getElementById('next-btn').style.display = 'block';
         }
 
-        // 次の問題 / 結果発表
         function nextQuestion() {
             currentIndex++;
             if(currentIndex < quizSet.length) {
@@ -721,7 +552,8 @@
                         : '<span class="review-icon" style="color:var(--error);">✖</span>';
                     
                     const qSubject = q.教科 || q.分野 || '';
-                    const qExam = `${q.試験の回数 || q.開催回 || ''} ${q.試験の番号 || q.問題番号 || ''}`;
+                    const qNumDisp = q.通し番号 ? `No.${q.通し番号}` : (q.試験の番号 || q.問題番号 || '');
+                    const qExam = `${q.試験の回数 || q.開催回 || ''} ${qNumDisp}`;
                     
                     li.innerHTML = `
                         ${icon}
