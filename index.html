@@ -93,8 +93,8 @@
             font-weight: 600;
         }
 
-        .filter-group { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
-        .form-control { display: flex; flex-direction: column; gap: 6px; }
+        .filter-group { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+        .form-control { display: flex; flex-direction: column; gap: 8px; }
         .form-control label { font-size: 0.88rem; font-weight: 700; color: #334155; }
 
         select, input[type="number"] { 
@@ -113,6 +113,79 @@
 
         .range-inputs { display: flex; align-items: center; gap: 8px; }
         .range-inputs span { color: var(--text-sub); font-weight: 700; }
+
+        /* --- 教科選択UI（複数選択） --- */
+        .subject-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .btn-quick {
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            color: #475569;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-quick:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .subject-category-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #64748b;
+            margin: 10px 0 6px 2px;
+            padding-bottom: 2px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 8px;
+        }
+
+        .subject-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+
+        .subject-chip:hover {
+            border-color: #93c5fd;
+            background: var(--primary-light);
+        }
+
+        .subject-chip input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .subject-chip.checked {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary-hover);
+        }
 
         .btn-primary { 
             background: var(--primary); 
@@ -255,9 +328,16 @@
                 <select id="filter-year"><option value="all">すべて（全回）</option></select>
             </div>
 
+            <!-- 教科選択エリア（複数選択） -->
             <div class="form-control">
-                <label for="filter-subject">教科</label>
-                <select id="filter-subject"><option value="all">すべて（全教科）</option></select>
+                <label>教科の選択（複数選択可）</label>
+                <div class="subject-actions">
+                    <button type="button" class="btn-quick" onclick="selectAllSubjects(true)">全選択</button>
+                    <button type="button" class="btn-quick" onclick="selectAllSubjects(false)">全解除</button>
+                    <button type="button" class="btn-quick" onclick="selectCategorySubjects('basic')">専門基礎科目のみ</button>
+                    <button type="button" class="btn-quick" onclick="selectCategorySubjects('special')">専門科目のみ</button>
+                </div>
+                <div id="subject-checkboxes-container"></div>
             </div>
 
             <!-- 問題番号の範囲指定 -->
@@ -348,7 +428,15 @@
         let currentIndex = 0;
         let score = 0;
 
-        // ヘッダー名吸収用ヘルパー関数
+        // 目次定義に基づく科目分類マッピング
+        const BASIC_SUBJECTS = [
+            '医療概論', '衛生学・公衆衛生学', '公衆衛生学', '関係法規', 
+            '解剖学', '生理学', '病理学概論', '臨床医学総論', '臨床医学各論', 'リハビリテーション医学'
+        ];
+        const SPECIAL_SUBJECTS = [
+            '東洋医学概論', '経絡経穴概論', '東洋医学臨床論', 'はり理論', 'きゅう理論'
+        ];
+
         function getValue(obj, keys) {
             for (let k of keys) {
                 if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
@@ -380,7 +468,6 @@
             const lines = text.trim().split(/\r?\n/);
             if(lines.length < 2) return [];
             
-            // BOM除去 & トリム
             const headers = lines[0].replace(/^\uFEFF/, '').split(',').map(h => h.trim().replace(/^"|"$/g, ''));
             
             return lines.slice(1).map(line => {
@@ -396,24 +483,96 @@
         }
 
         function updateFilters(data) {
+            // 回数の更新
             const years = [...new Set(data.map(q => getValue(q, ['試験の回数', '開催回', '回'])))].filter(Boolean).sort().reverse();
-            const subjects = [...new Set(data.map(q => getValue(q, ['教科', '分野', '科目'])))].filter(Boolean).sort();
-            
             const ys = document.getElementById('filter-year');
             years.forEach(y => { ys.innerHTML += `<option value="${y}">${y}</option>`; });
             
-            const ss = document.getElementById('filter-subject');
-            subjects.forEach(s => { ss.innerHTML += `<option value="${s}">${s}</option>`; });
+            // 教科の更新（チェックボックス生成）
+            const subjects = [...new Set(data.map(q => getValue(q, ['教科', '分野', '科目'])))].filter(Boolean);
+            
+            const container = document.getElementById('subject-checkboxes-container');
+            container.innerHTML = '';
+
+            // 存在科目を分類分け
+            const basicList = subjects.filter(s => BASIC_SUBJECTS.some(b => s.includes(b) || b.includes(s)));
+            const specialList = subjects.filter(s => SPECIAL_SUBJECTS.some(b => s.includes(b) || b.includes(s)));
+            const otherList = subjects.filter(s => !basicList.includes(s) && !specialList.includes(s));
+
+            const renderGroup = (title, list) => {
+                if (list.length === 0) return;
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'subject-category-title';
+                titleDiv.innerText = title;
+                container.appendChild(titleDiv);
+
+                const grid = document.createElement('div');
+                grid.className = 'subject-grid';
+
+                list.forEach(subj => {
+                    const label = document.createElement('label');
+                    label.className = 'subject-chip checked';
+                    label.dataset.subject = subj;
+
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.value = subj;
+                    cb.checked = true;
+                    cb.className = 'subject-checkbox';
+                    cb.onchange = (e) => {
+                        label.classList.toggle('checked', e.target.checked);
+                    };
+
+                    label.appendChild(cb);
+                    label.appendChild(document.createTextNode(subj));
+                    grid.appendChild(label);
+                });
+                container.appendChild(grid);
+            };
+
+            renderGroup('専門基礎科目', basicList);
+            renderGroup('専門科目', specialList);
+            renderGroup('その他・共通', otherList);
+        }
+
+        function selectAllSubjects(checked) {
+            document.querySelectorAll('.subject-checkbox').forEach(cb => {
+                cb.checked = checked;
+                cb.parentElement.classList.toggle('checked', checked);
+            });
+        }
+
+        function selectCategorySubjects(type) {
+            document.querySelectorAll('.subject-checkbox').forEach(cb => {
+                const subj = cb.value;
+                let isTarget = false;
+
+                if (type === 'basic') {
+                    isTarget = BASIC_SUBJECTS.some(b => subj.includes(b) || b.includes(subj));
+                } else if (type === 'special') {
+                    isTarget = SPECIAL_SUBJECTS.some(b => subj.includes(b) || b.includes(subj));
+                }
+
+                cb.checked = isTarget;
+                cb.parentElement.classList.toggle('checked', isTarget);
+            });
         }
 
         function startQuiz() {
             const year = document.getElementById('filter-year').value;
-            const subject = document.getElementById('filter-subject').value;
             const startNum = parseInt(document.getElementById('num-start').value) || null;
             const endNum = parseInt(document.getElementById('num-end').value) || null;
             const orderMode = document.getElementById('order-mode').value;
             const count = parseInt(document.getElementById('quiz-count').value);
             
+            // 選択された教科の配列を取得
+            const selectedSubjects = Array.from(document.querySelectorAll('.subject-checkbox:checked')).map(cb => cb.value);
+
+            if (selectedSubjects.length === 0) {
+                alert("教科を1つ以上選択してください。");
+                return;
+            }
+
             quizSet = masterData.filter(q => {
                 const qYear = getValue(q, ['試験の回数', '開催回', '回']);
                 const qSubject = getValue(q, ['教科', '分野', '科目']);
@@ -422,7 +581,7 @@
                 const qNum = parseInt(qNumStr.replace(/[^0-9]/g, '')) || 0;
 
                 const matchYear = (year === 'all' || qYear === year);
-                const matchSubject = (subject === 'all' || qSubject === subject);
+                const matchSubject = selectedSubjects.includes(qSubject);
                 
                 let matchRange = true;
                 if (startNum !== null && qNum < startNum) matchRange = false;
@@ -483,10 +642,8 @@
                 categoryBadge.style.display = 'none';
             }
 
-            // 問題文（問題 / 問題文 / 問）
             document.getElementById('question-text').innerText = getValue(q, ['問題', '問題文', '問']);
 
-            // 選択肢
             const container = document.getElementById('options-container');
             container.innerHTML = '';
             
