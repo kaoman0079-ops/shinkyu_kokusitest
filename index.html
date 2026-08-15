@@ -270,7 +270,7 @@
                 </div>
             </div>
 
-            <!-- 出題順（ランダム / 順番通り） -->
+            <!-- 出題順 -->
             <div class="form-control">
                 <label for="order-mode">出題の順番</label>
                 <select id="order-mode">
@@ -348,6 +348,16 @@
         let currentIndex = 0;
         let score = 0;
 
+        // ヘッダー名吸収用ヘルパー関数
+        function getValue(obj, keys) {
+            for (let k of keys) {
+                if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
+                    return obj[k];
+                }
+            }
+            return "";
+        }
+
         window.onload = async function() {
             try {
                 const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
@@ -370,9 +380,11 @@
             const lines = text.trim().split(/\r?\n/);
             if(lines.length < 2) return [];
             
-            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            // BOM除去 & トリム
+            const headers = lines[0].replace(/^\uFEFF/, '').split(',').map(h => h.trim().replace(/^"|"$/g, ''));
             
             return lines.slice(1).map(line => {
+                if (!line.trim()) return null;
                 const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 let obj = {};
                 headers.forEach((h, i) => {
@@ -380,12 +392,12 @@
                     obj[h] = val;
                 });
                 return obj;
-            });
+            }).filter(Boolean);
         }
 
         function updateFilters(data) {
-            const years = [...new Set(data.map(q => q.試験の回数 || q.開催回))].filter(Boolean).sort().reverse();
-            const subjects = [...new Set(data.map(q => q.教科 || q.分野))].filter(Boolean).sort();
+            const years = [...new Set(data.map(q => getValue(q, ['試験の回数', '開催回', '回'])))].filter(Boolean).sort().reverse();
+            const subjects = [...new Set(data.map(q => getValue(q, ['教科', '分野', '科目'])))].filter(Boolean).sort();
             
             const ys = document.getElementById('filter-year');
             years.forEach(y => { ys.innerHTML += `<option value="${y}">${y}</option>`; });
@@ -402,14 +414,12 @@
             const orderMode = document.getElementById('order-mode').value;
             const count = parseInt(document.getElementById('quiz-count').value);
             
-            // フィルタリング処理
             quizSet = masterData.filter(q => {
-                const qYear = q.試験の回数 || q.開催回;
-                const qSubject = q.教科 || q.分野;
+                const qYear = getValue(q, ['試験の回数', '開催回', '回']);
+                const qSubject = getValue(q, ['教科', '分野', '科目']);
                 
-                // 問題番号の判定（通し番号 or 試験の番号）
-                const qNumStr = q.通し番号 || q.試験の番号 || q.問題番号 || "0";
-                const qNum = parseInt(qNumStr.replace(/[^0-9]/g, '')); 
+                const qNumStr = getValue(q, ['通し番号', '試験の番号', '問題番号', '番号', 'No']) || "0";
+                const qNum = parseInt(qNumStr.replace(/[^0-9]/g, '')) || 0;
 
                 const matchYear = (year === 'all' || qYear === year);
                 const matchSubject = (subject === 'all' || qSubject === subject);
@@ -426,14 +436,12 @@
                 return; 
             }
 
-            // 出題順の制御（ランダム or 順番通り）
             if (orderMode === 'random') {
                 quizSet.sort(() => Math.random() - 0.5);
             } else {
-                // 教科・番号順に整列
                 quizSet.sort((a, b) => {
-                    const numA = parseInt((a.通し番号 || a.試験の番号 || "0").replace(/[^0-9]/g, ''));
-                    const numB = parseInt((b.通し番号 || b.試験の番号 || "0").replace(/[^0-9]/g, ''));
+                    const numA = parseInt((getValue(a, ['通し番号', '試験の番号', '問題番号']) || "0").replace(/[^0-9]/g, '')) || 0;
+                    const numB = parseInt((getValue(b, ['通し番号', '試験の番号', '問題番号']) || "0").replace(/[^0-9]/g, '')) || 0;
                     return numA - numB;
                 });
             }
@@ -455,15 +463,19 @@
             document.getElementById('progress-bar').style.width = `${progressPercent}%`;
             document.getElementById('quiz-progress-text').innerText = `${currentIndex + 1} / ${quizSet.length}問`;
             
-            const qNumDisp = q.通し番号 ? `No.${q.通し番号}` : (q.試験の番号 || q.問題番号 || '');
-            const examInfo = `${q.試験の回数 || q.開催回 || ''} ${qNumDisp}`;
+            const numVal = getValue(q, ['通し番号', '試験の番号', '問題番号', '番号']);
+            const qNumDisp = numVal ? `No.${numVal}` : '';
+            const examInfo = `${getValue(q, ['試験の回数', '開催回'])} ${qNumDisp}`;
             document.getElementById('quiz-exam-info').innerText = examInfo;
 
-            const subjectText = q.教科 || q.分野 || '';
+            const subjectText = getValue(q, ['教科', '分野', '科目']);
             document.getElementById('badge-subject').innerText = subjectText;
 
             const categoryBadge = document.getElementById('badge-category');
-            const categoryText = [q.大項目, q.中項目].filter(Boolean).join(' ＞ ');
+            const bigCat = getValue(q, ['大項目', '大分類']);
+            const midCat = getValue(q, ['中項目', '中分類']);
+            const categoryText = [bigCat, midCat].filter(Boolean).join(' ＞ ');
+            
             if (categoryText) {
                 categoryBadge.innerText = categoryText;
                 categoryBadge.style.display = 'inline-block';
@@ -471,13 +483,15 @@
                 categoryBadge.style.display = 'none';
             }
 
-            document.getElementById('question-text').innerText = q.問題 || q.問題文;
+            // 問題文（問題 / 問題文 / 問）
+            document.getElementById('question-text').innerText = getValue(q, ['問題', '問題文', '問']);
 
+            // 選択肢
             const container = document.getElementById('options-container');
             container.innerHTML = '';
             
             for(let i = 1; i <= 4; i++) {
-                const optText = q[`選択肢${i}`];
+                const optText = getValue(q, [`選択肢${i}`, `選択肢 ${i}`, `肢${i}`]);
                 if (!optText) continue;
 
                 const btn = document.createElement('button');
@@ -496,7 +510,7 @@
 
         function checkAnswer(selected, btn) {
             const q = quizSet[currentIndex];
-            const rawAnswer = q.答え || q.正解;
+            const rawAnswer = getValue(q, ['答え', '正解', '解答']);
             const correct = parseInt(rawAnswer);
             
             const btns = document.querySelectorAll('.option-btn');
@@ -516,11 +530,12 @@
             const expText = document.getElementById('explanation-text');
             expBox.style.display = 'block';
 
-            const correctText = q[`選択肢${correct}`] || '';
+            const correctText = getValue(q, [`選択肢${correct}`, `選択肢 ${correct}`]);
             let explanationHTML = `<p style="font-weight:700; color:#1e293b; margin-bottom:8px;">正解：${correct}. ${correctText}</p>`;
             
-            if (q.解説) { 
-                explanationHTML += `<hr style="border:0; border-top:1px solid #fde68a; margin:8px 0;"><p>${q.解説}</p>`; 
+            const expVal = getValue(q, ['解説', '問題解説']);
+            if (expVal) { 
+                explanationHTML += `<hr style="border:0; border-top:1px solid #fde68a; margin:8px 0;"><p>${expVal}</p>`; 
             }
             expText.innerHTML = explanationHTML;
 
@@ -551,9 +566,10 @@
                         ? '<span class="review-icon" style="color:var(--success);">◯</span>' 
                         : '<span class="review-icon" style="color:var(--error);">✖</span>';
                     
-                    const qSubject = q.教科 || q.分野 || '';
-                    const qNumDisp = q.通し番号 ? `No.${q.通し番号}` : (q.試験の番号 || q.問題番号 || '');
-                    const qExam = `${q.試験の回数 || q.開催回 || ''} ${qNumDisp}`;
+                    const qSubject = getValue(q, ['教科', '分野', '科目']);
+                    const numVal = getValue(q, ['通し番号', '試験の番号', '問題番号']);
+                    const qNumDisp = numVal ? `No.${numVal}` : '';
+                    const qExam = `${getValue(q, ['試験の回数', '開催回'])} ${qNumDisp}`;
                     
                     li.innerHTML = `
                         ${icon}
