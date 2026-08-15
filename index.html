@@ -79,7 +79,7 @@
             transition: all 0.3s ease;
         }
 
-        /* 画面切り替えのCSS制御 */
+        /* 画面切り替え表示制御 */
         .screen-section { display: none; }
         .screen-section.active { display: block; }
 
@@ -115,13 +115,7 @@
         .range-inputs { display: flex; align-items: center; gap: 8px; }
         .range-inputs span { color: var(--text-sub); font-weight: 700; }
 
-        /* --- 教科選択UI --- */
-        .subject-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 8px;
-        }
+        .subject-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 
         .btn-quick {
             background: #f1f5f9;
@@ -459,22 +453,62 @@
             }
         };
 
+        // 改行を含んだCSVを正しく解釈する堅牢なパーサー
         function parseCSV(text) {
-            const lines = text.trim().split(/\r?\n/);
-            if(lines.length < 2) return [];
+            text = text.replace(/^\uFEFF/, '');
+            const rows = [];
+            let currentRow = [];
+            let currentCell = '';
+            let insideQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (insideQuotes && nextChar === '"') {
+                        currentCell += '"';
+                        i++; 
+                    } else {
+                        insideQuotes = !insideQuotes;
+                    }
+                } else if (char === ',' && !insideQuotes) {
+                    currentRow.push(currentCell.trim());
+                    currentCell = '';
+                } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+                    if (char === '\r' && nextChar === '\n') {
+                        i++; 
+                    }
+                    currentRow.push(currentCell.trim());
+                    if (currentRow.some(cell => cell.length > 0)) {
+                        rows.push(currentRow);
+                    }
+                    currentRow = [];
+                    currentCell = '';
+                } else {
+                    currentCell += char;
+                }
+            }
+
+            if (currentCell.length > 0 || currentRow.length > 0) {
+                currentRow.push(currentCell.trim());
+                if (currentRow.some(cell => cell.length > 0)) {
+                    rows.push(currentRow);
+                }
+            }
+
+            if (rows.length < 2) return [];
+
+            const headers = rows[0].map(h => h.replace(/^"|"$/g, '').trim());
             
-            const headers = lines[0].replace(/^\uFEFF/, '').split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-            
-            return lines.slice(1).map(line => {
-                if (!line.trim()) return null;
-                const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            return rows.slice(1).map(row => {
                 let obj = {};
                 headers.forEach((h, i) => {
-                    let val = values[i] ? values[i].trim().replace(/^"|"$/g, '').replace(/""/g, '"') : "";
+                    let val = row[i] !== undefined ? row[i].replace(/^"|"$/g, '').replace(/""/g, '"') : "";
                     obj[h] = val;
                 });
                 return obj;
-            }).filter(Boolean);
+            });
         }
 
         function updateFilters(data) {
