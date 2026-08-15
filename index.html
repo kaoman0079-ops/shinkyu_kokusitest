@@ -428,31 +428,21 @@
         let currentIndex = 0;
         let score = 0;
 
-        // 国家試験標準教科マスターリスト（固定表示用）
         const MASTER_BASIC_SUBJECTS = [
-            '医療概論',
-            '衛生学・公衆衛生学',
-            '関係法規',
-            '解剖学',
-            '生理学',
-            '病理学概論',
-            '臨床医学総論',
-            '臨床医学各論',
-            'リハビリテーション医学'
+            '医療概論', '衛生学・公衆衛生学', '関係法規', '解剖学', 
+            '生理学', '病理学概論', '臨床医学総論', '臨床医学各論', 'リハビリテーション医学'
         ];
 
         const MASTER_SPECIAL_SUBJECTS = [
-            '東洋医学概論',
-            '経絡経穴概論',
-            '東洋医学臨床論',
-            'はり理論',
-            'きゅう理論'
+            '東洋医学概論', '経絡経穴概論', '東洋医学臨床論', 'はり理論', 'きゅう理論'
         ];
 
+        // 柔軟なキー検索ヘルパー関数
         function getValue(obj, keys) {
+            if (!obj) return "";
             for (let k of keys) {
                 if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
-                    return obj[k];
+                    return String(obj[k]).trim();
                 }
             }
             return "";
@@ -475,7 +465,6 @@
                 document.getElementById('start-btn').disabled = false;
                 document.getElementById('start-btn').innerText = "演習を開始する！";
             } catch (e) {
-                // CSV取得失敗時でも教科選択画面は固定リストで生成しておく
                 updateFilters([]);
                 document.getElementById('status-msg').innerText = "⚠️ 同期失敗。data.csvを確認してください。";
             }
@@ -500,19 +489,16 @@
         }
 
         function updateFilters(data) {
-            // 回数の更新
             const years = [...new Set(data.map(q => getValue(q, ['試験の回数', '開催回', '回'])))].filter(Boolean).sort().reverse();
             const ys = document.getElementById('filter-year');
             ys.innerHTML = '<option value="all">すべて（全回）</option>';
             years.forEach(y => { ys.innerHTML += `<option value="${y}">${y}</option>`; });
             
-            // 教科の統合（固定リスト + CSVから検出された未知の教科）
             const csvSubjects = [...new Set(data.map(q => getValue(q, ['教科', '分野', '科目'])))].filter(Boolean);
             
             const basicList = [...MASTER_BASIC_SUBJECTS];
             const specialList = [...MASTER_SPECIAL_SUBJECTS];
             
-            // CSVにあって固定リストに無いものをその他へ集約
             const otherList = csvSubjects.filter(s => 
                 !basicList.some(b => s.includes(b) || b.includes(s)) &&
                 !specialList.some(b => s.includes(b) || b.includes(s))
@@ -594,12 +580,11 @@
                 const qYear = getValue(q, ['試験の回数', '開催回', '回']);
                 const qSubject = getValue(q, ['教科', '分野', '科目']);
                 
-                const qNumStr = getValue(q, ['通し番号', '試験の番号', '問題番号', '番号', 'No']) || "0";
+                // 通し番号・教科での番号・試験の番号のいずれかから番号を抽出
+                const qNumStr = getValue(q, ['全体通し番号', '通し番号', '教科での番号', '試験の番号', '問題番号', '番号']) || "0";
                 const qNum = parseInt(qNumStr.replace(/[^0-9]/g, '')) || 0;
 
                 const matchYear = (year === 'all' || qYear === year);
-                
-                // 表記ゆれにもある程度対応してマッチング
                 const matchSubject = selectedSubjects.some(s => qSubject.includes(s) || s.includes(qSubject));
                 
                 let matchRange = true;
@@ -610,7 +595,7 @@
             });
 
             if(quizSet.length === 0) { 
-                alert("指定した条件・教科に該当する問題が見つかりませんでした。データが未登録の可能性があります。"); 
+                alert("指定した条件・教科に該当する問題が見つかりませんでした。"); 
                 return; 
             }
 
@@ -618,8 +603,8 @@
                 quizSet.sort(() => Math.random() - 0.5);
             } else {
                 quizSet.sort((a, b) => {
-                    const numA = parseInt((getValue(a, ['通し番号', '試験の番号', '問題番号']) || "0").replace(/[^0-9]/g, '')) || 0;
-                    const numB = parseInt((getValue(b, ['通し番号', '試験の番号', '問題番号']) || "0").replace(/[^0-9]/g, '')) || 0;
+                    const numA = parseInt((getValue(a, ['全体通し番号', '通し番号', '教科での番号', '試験の番号', '問題番号']) || "0").replace(/[^0-9]/g, '')) || 0;
+                    const numB = parseInt((getValue(b, ['全体通し番号', '通し番号', '教科での番号', '試験の番号', '問題番号']) || "0").replace(/[^0-9]/g, '')) || 0;
                     return numA - numB;
                 });
             }
@@ -629,7 +614,7 @@
             currentIndex = 0; 
             score = 0;
 
-            document.getElementById('setup-area').style.display = 'none';
+            document.getElementById('setup-area').classList.remove('active');
             document.getElementById('quiz-area').classList.add('active');
             showQuestion();
         }
@@ -641,9 +626,8 @@
             document.getElementById('progress-bar').style.width = `${progressPercent}%`;
             document.getElementById('quiz-progress-text').innerText = `${currentIndex + 1} / ${quizSet.length}問`;
             
-            const numVal = getValue(q, ['通し番号', '試験の番号', '問題番号', '番号']);
-            const qNumDisp = numVal ? `No.${numVal}` : '';
-            const examInfo = `${getValue(q, ['試験の回数', '開催回'])} ${qNumDisp}`;
+            const examNum = getValue(q, ['試験の番号', '問題番号', '番号']);
+            const examInfo = `${getValue(q, ['試験の回数', '開催回'])} ${examNum}`;
             document.getElementById('quiz-exam-info').innerText = examInfo;
 
             const subjectText = getValue(q, ['教科', '分野', '科目']);
@@ -687,7 +671,7 @@
         function checkAnswer(selected, btn) {
             const q = quizSet[currentIndex];
             const rawAnswer = getValue(q, ['答え', '正解', '解答']);
-            const correct = parseInt(rawAnswer);
+            const correct = parseInt(rawAnswer.replace(/[^0-9]/g, ''));
             
             const btns = document.querySelectorAll('.option-btn');
             btns.forEach(b => b.disabled = true);
@@ -743,9 +727,8 @@
                         : '<span class="review-icon" style="color:var(--error);">✖</span>';
                     
                     const qSubject = getValue(q, ['教科', '分野', '科目']);
-                    const numVal = getValue(q, ['通し番号', '試験の番号', '問題番号']);
-                    const qNumDisp = numVal ? `No.${numVal}` : '';
-                    const qExam = `${getValue(q, ['試験の回数', '開催回'])} ${qNumDisp}`;
+                    const examNum = getValue(q, ['試験の番号', '問題番号', '番号']);
+                    const qExam = `${getValue(q, ['試験の回数', '開催回'])} ${examNum}`;
                     
                     li.innerHTML = `
                         ${icon}
