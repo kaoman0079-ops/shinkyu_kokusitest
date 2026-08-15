@@ -20,6 +20,7 @@
             --error-bg: #fef2f2;
             --warning-bg: #fffbeb;
             --warning-border: #f59e0b;
+            --highlight: #dc2626; /* 赤字強調用カラー */
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -245,6 +246,12 @@
         .wrong { background-color: var(--error-bg) !important; border-color: var(--error) !important; color: #991b1b !important; }
         .wrong .option-num { background: var(--error) !important; color: white !important; }
 
+        /* 赤字強調用スタイル */
+        .highlight {
+            color: var(--highlight);
+            font-weight: 800;
+        }
+
         .explanation { 
             margin-top: 24px; 
             padding: 20px; 
@@ -434,6 +441,12 @@
         function cleanOptionText(text) {
             if (!text) return "";
             return text.replace(/^[1-41-4１-４][.．\s ]+/, '').trim();
+        }
+
+        // **で囲まれた箇所を赤字強調表示用タグに変換する関数
+        function formatText(text) {
+            if (!text) return "";
+            return text.replace(/\*\*(.*?)\*\*/g, '<span class="highlight">$1</span>');
         }
 
         window.onload = async function() {
@@ -670,7 +683,9 @@
                 categoryBadge.style.display = 'none';
             }
 
-            document.getElementById('question-text').innerText = getValue(q, ['問題', '問題文', '問']);
+            // 問題文の **強調** 処理適用
+            const rawQuestionText = getValue(q, ['問題', '問題文', '問']);
+            document.getElementById('question-text').innerHTML = formatText(rawQuestionText);
 
             const container = document.getElementById('options-container');
             container.innerHTML = '';
@@ -679,8 +694,8 @@
                 const rawOptText = getValue(q, [`選択肢${i}`, `選択肢 ${i}`, `肢${i}`]);
                 if (!rawOptText) continue;
 
-                // 先頭の余分な数字を除去
-                const optText = cleanOptionText(rawOptText);
+                // 先頭数字削除 ＆ **強調** 処理適用
+                const optText = formatText(cleanOptionText(rawOptText));
 
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
@@ -719,13 +734,14 @@
             expBox.style.display = 'block';
 
             const rawCorrectText = getValue(q, [`選択肢${correct}`, `選択肢 ${correct}`]);
-            const correctText = cleanOptionText(rawCorrectText);
+            const correctText = formatText(cleanOptionText(rawCorrectText));
 
             let explanationHTML = `<p style="font-weight:700; color:#1e293b; margin-bottom:8px;">正解：${correct}. ${correctText}</p>`;
             
             const expVal = getValue(q, ['解説', '問題解説']);
             if (expVal) { 
-                explanationHTML += `<hr style="border:0; border-top:1px solid #fde68a; margin:8px 0;"><p>${expVal}</p>`; 
+                // 解説文の **強調** 処理適用
+                explanationHTML += `<hr style="border:0; border-top:1px solid #fde68a; margin:8px 0;"><p>${formatText(expVal)}</p>`; 
             }
             expText.innerHTML = explanationHTML;
 
