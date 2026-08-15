@@ -79,7 +79,6 @@
             transition: all 0.3s ease;
         }
 
-        /* 画面切り替え表示制御 */
         .screen-section { display: none; }
         .screen-section.active { display: block; }
 
@@ -431,6 +430,12 @@
             return "";
         }
 
+        // 先頭の「1. 」「1．」などの数字記号を削除する関数
+        function cleanOptionText(text) {
+            if (!text) return "";
+            return text.replace(/^[1-41-4１-４][.．\s ]+/, '').trim();
+        }
+
         window.onload = async function() {
             try {
                 const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
@@ -453,7 +458,6 @@
             }
         };
 
-        // 改行を含んだCSVを正しく解釈する堅牢なパーサー
         function parseCSV(text) {
             text = text.replace(/^\uFEFF/, '');
             const rows = [];
@@ -672,8 +676,11 @@
             container.innerHTML = '';
             
             for(let i = 1; i <= 4; i++) {
-                const optText = getValue(q, [`選択肢${i}`, `選択肢 ${i}`, `肢${i}`]);
-                if (!optText) continue;
+                const rawOptText = getValue(q, [`選択肢${i}`, `選択肢 ${i}`, `肢${i}`]);
+                if (!rawOptText) continue;
+
+                // 先頭の余分な数字を除去
+                const optText = cleanOptionText(rawOptText);
 
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
@@ -711,7 +718,9 @@
             const expText = document.getElementById('explanation-text');
             expBox.style.display = 'block';
 
-            const correctText = getValue(q, [`選択肢${correct}`, `選択肢 ${correct}`]);
+            const rawCorrectText = getValue(q, [`選択肢${correct}`, `選択肢 ${correct}`]);
+            const correctText = cleanOptionText(rawCorrectText);
+
             let explanationHTML = `<p style="font-weight:700; color:#1e293b; margin-bottom:8px;">正解：${correct}. ${correctText}</p>`;
             
             const expVal = getValue(q, ['解説', '問題解説']);
