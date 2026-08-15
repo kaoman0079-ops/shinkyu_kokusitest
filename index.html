@@ -143,7 +143,7 @@
             font-size: 0.8rem;
             font-weight: 800;
             color: #64748b;
-            margin: 10px 0 6px 2px;
+            margin: 12px 0 6px 2px;
             padding-bottom: 2px;
             border-bottom: 1px dashed var(--border);
         }
@@ -428,13 +428,25 @@
         let currentIndex = 0;
         let score = 0;
 
-        // 目次定義に基づく科目分類マッピング
-        const BASIC_SUBJECTS = [
-            '医療概論', '衛生学・公衆衛生学', '公衆衛生学', '関係法規', 
-            '解剖学', '生理学', '病理学概論', '臨床医学総論', '臨床医学各論', 'リハビリテーション医学'
+        // 国家試験標準教科マスターリスト（固定表示用）
+        const MASTER_BASIC_SUBJECTS = [
+            '医療概論',
+            '衛生学・公衆衛生学',
+            '関係法規',
+            '解剖学',
+            '生理学',
+            '病理学概論',
+            '臨床医学総論',
+            '臨床医学各論',
+            'リハビリテーション医学'
         ];
-        const SPECIAL_SUBJECTS = [
-            '東洋医学概論', '経絡経穴概論', '東洋医学臨床論', 'はり理論', 'きゅう理論'
+
+        const MASTER_SPECIAL_SUBJECTS = [
+            '東洋医学概論',
+            '経絡経穴概論',
+            '東洋医学臨床論',
+            'はり理論',
+            'きゅう理論'
         ];
 
         function getValue(obj, keys) {
@@ -451,15 +463,20 @@
                 const response = await fetch(DATA_URL + '?t=' + new Date().getTime());
                 const csvText = await response.text();
                 masterData = parseCSV(csvText);
+                
+                updateFilters(masterData);
+                
                 if(masterData.length > 0) {
-                    updateFilters(masterData);
                     document.getElementById('status-msg').innerText = `✅ データ読み込み完了：全${masterData.length}問`;
-                    document.getElementById('start-btn').disabled = false;
-                    document.getElementById('start-btn').innerText = "演習を開始する！";
                 } else {
                     document.getElementById('status-msg').innerText = "⚠️ データが空です。data.csvを確認してください。";
                 }
+                
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('start-btn').innerText = "演習を開始する！";
             } catch (e) {
+                // CSV取得失敗時でも教科選択画面は固定リストで生成しておく
+                updateFilters([]);
                 document.getElementById('status-msg').innerText = "⚠️ 同期失敗。data.csvを確認してください。";
             }
         };
@@ -486,20 +503,25 @@
             // 回数の更新
             const years = [...new Set(data.map(q => getValue(q, ['試験の回数', '開催回', '回'])))].filter(Boolean).sort().reverse();
             const ys = document.getElementById('filter-year');
+            ys.innerHTML = '<option value="all">すべて（全回）</option>';
             years.forEach(y => { ys.innerHTML += `<option value="${y}">${y}</option>`; });
             
-            // 教科の更新（チェックボックス生成）
-            const subjects = [...new Set(data.map(q => getValue(q, ['教科', '分野', '科目'])))].filter(Boolean);
+            // 教科の統合（固定リスト + CSVから検出された未知の教科）
+            const csvSubjects = [...new Set(data.map(q => getValue(q, ['教科', '分野', '科目'])))].filter(Boolean);
             
+            const basicList = [...MASTER_BASIC_SUBJECTS];
+            const specialList = [...MASTER_SPECIAL_SUBJECTS];
+            
+            // CSVにあって固定リストに無いものをその他へ集約
+            const otherList = csvSubjects.filter(s => 
+                !basicList.some(b => s.includes(b) || b.includes(s)) &&
+                !specialList.some(b => s.includes(b) || b.includes(s))
+            );
+
             const container = document.getElementById('subject-checkboxes-container');
             container.innerHTML = '';
 
-            // 存在科目を分類分け
-            const basicList = subjects.filter(s => BASIC_SUBJECTS.some(b => s.includes(b) || b.includes(s)));
-            const specialList = subjects.filter(s => SPECIAL_SUBJECTS.some(b => s.includes(b) || b.includes(s)));
-            const otherList = subjects.filter(s => !basicList.includes(s) && !specialList.includes(s));
-
-            const renderGroup = (title, list) => {
+            const renderGroup = (title, list, categoryKey) => {
                 if (list.length === 0) return;
                 const titleDiv = document.createElement('div');
                 titleDiv.className = 'subject-category-title';
@@ -513,6 +535,7 @@
                     const label = document.createElement('label');
                     label.className = 'subject-chip checked';
                     label.dataset.subject = subj;
+                    label.dataset.category = categoryKey;
 
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
@@ -530,9 +553,9 @@
                 container.appendChild(grid);
             };
 
-            renderGroup('専門基礎科目', basicList);
-            renderGroup('専門科目', specialList);
-            renderGroup('その他・共通', otherList);
+            renderGroup('専門基礎科目', basicList, 'basic');
+            renderGroup('専門科目', specialList, 'special');
+            renderGroup('その他・追加科目', otherList, 'other');
         }
 
         function selectAllSubjects(checked) {
@@ -544,17 +567,12 @@
 
         function selectCategorySubjects(type) {
             document.querySelectorAll('.subject-checkbox').forEach(cb => {
-                const subj = cb.value;
-                let isTarget = false;
-
-                if (type === 'basic') {
-                    isTarget = BASIC_SUBJECTS.some(b => subj.includes(b) || b.includes(subj));
-                } else if (type === 'special') {
-                    isTarget = SPECIAL_SUBJECTS.some(b => subj.includes(b) || b.includes(subj));
-                }
+                const label = cb.parentElement;
+                const cat = label.dataset.category;
+                const isTarget = (cat === type);
 
                 cb.checked = isTarget;
-                cb.parentElement.classList.toggle('checked', isTarget);
+                label.classList.toggle('checked', isTarget);
             });
         }
 
@@ -565,7 +583,6 @@
             const orderMode = document.getElementById('order-mode').value;
             const count = parseInt(document.getElementById('quiz-count').value);
             
-            // 選択された教科の配列を取得
             const selectedSubjects = Array.from(document.querySelectorAll('.subject-checkbox:checked')).map(cb => cb.value);
 
             if (selectedSubjects.length === 0) {
@@ -581,7 +598,9 @@
                 const qNum = parseInt(qNumStr.replace(/[^0-9]/g, '')) || 0;
 
                 const matchYear = (year === 'all' || qYear === year);
-                const matchSubject = selectedSubjects.includes(qSubject);
+                
+                // 表記ゆれにもある程度対応してマッチング
+                const matchSubject = selectedSubjects.some(s => qSubject.includes(s) || s.includes(qSubject));
                 
                 let matchRange = true;
                 if (startNum !== null && qNum < startNum) matchRange = false;
@@ -591,7 +610,7 @@
             });
 
             if(quizSet.length === 0) { 
-                alert("指定した条件・番号範囲に該当する問題が見つかりませんでした。"); 
+                alert("指定した条件・教科に該当する問題が見つかりませんでした。データが未登録の可能性があります。"); 
                 return; 
             }
 
