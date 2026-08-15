@@ -79,8 +79,9 @@
             transition: all 0.3s ease;
         }
 
-        .setup-area, .quiz-area, .result-area { display: none; }
-        .active { display: block; }
+        /* 画面切り替えのCSS制御 */
+        .screen-section { display: none; }
+        .screen-section.active { display: block; }
 
         .status {
             text-align: center;
@@ -114,7 +115,7 @@
         .range-inputs { display: flex; align-items: center; gap: 8px; }
         .range-inputs span { color: var(--text-sub); font-weight: 700; }
 
-        /* --- 教科選択UI（複数選択） --- */
+        /* --- 教科選択UI --- */
         .subject-actions {
             display: flex;
             flex-wrap: wrap;
@@ -134,10 +135,7 @@
             transition: all 0.15s ease;
         }
 
-        .btn-quick:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-        }
+        .btn-quick:hover { background: #e2e8f0; color: #0f172a; }
 
         .subject-category-title {
             font-size: 0.8rem;
@@ -169,10 +167,7 @@
             transition: all 0.15s ease;
         }
 
-        .subject-chip:hover {
-            border-color: #93c5fd;
-            background: var(--primary-light);
-        }
+        .subject-chip:hover { border-color: #93c5fd; background: var(--primary-light); }
 
         .subject-chip input[type="checkbox"] {
             width: 16px;
@@ -319,7 +314,7 @@
     </div>
 
     <!-- 条件設定画面 -->
-    <div id="setup-area" class="card active">
+    <div id="setup-area" class="card screen-section active">
         <div id="status-msg" class="status">データ同期中...</div>
         
         <div class="filter-group">
@@ -328,7 +323,6 @@
                 <select id="filter-year"><option value="all">すべて（全回）</option></select>
             </div>
 
-            <!-- 教科選択エリア（複数選択） -->
             <div class="form-control">
                 <label>教科の選択（複数選択可）</label>
                 <div class="subject-actions">
@@ -340,7 +334,6 @@
                 <div id="subject-checkboxes-container"></div>
             </div>
 
-            <!-- 問題番号の範囲指定 -->
             <div class="form-control">
                 <label>出題番号の範囲（例: 1〜20番）</label>
                 <div class="range-inputs">
@@ -350,7 +343,6 @@
                 </div>
             </div>
 
-            <!-- 出題順 -->
             <div class="form-control">
                 <label for="order-mode">出題の順番</label>
                 <select id="order-mode">
@@ -375,36 +367,34 @@
     </div>
 
     <!-- 問題演習画面 -->
-    <div id="quiz-area" class="quiz-area">
-        <div class="card">
-            <div class="quiz-meta">
-                <div class="quiz-info-row">
-                    <span id="quiz-progress-text">1/10問</span>
-                    <span id="quiz-exam-info"></span>
-                </div>
-                <div class="progress-bar-container">
-                    <div id="progress-bar" class="progress-bar"></div>
-                </div>
-                <div class="category-badges">
-                    <span id="badge-subject" class="badge badge-subject">教科</span>
-                    <span id="badge-category" class="badge" style="display:none;"></span>
-                </div>
+    <div id="quiz-area" class="card screen-section">
+        <div class="quiz-meta">
+            <div class="quiz-info-row">
+                <span id="quiz-progress-text">1/10問</span>
+                <span id="quiz-exam-info"></span>
             </div>
-
-            <div id="question-text"></div>
-            <div id="options-container" class="options-grid"></div>
-
-            <div id="explanation-box" class="explanation">
-                <div class="explanation-title">💡 解説・解答</div>
-                <div id="explanation-text"></div>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
             </div>
-
-            <button id="next-btn" class="btn-next" onclick="nextQuestion()">次の問題へ進む ➔</button>
+            <div class="category-badges">
+                <span id="badge-subject" class="badge badge-subject">教科</span>
+                <span id="badge-category" class="badge" style="display:none;"></span>
+            </div>
         </div>
+
+        <div id="question-text"></div>
+        <div id="options-container" class="options-grid"></div>
+
+        <div id="explanation-box" class="explanation">
+            <div class="explanation-title">💡 解説・解答</div>
+            <div id="explanation-text"></div>
+        </div>
+
+        <button id="next-btn" class="btn-next" onclick="nextQuestion()">次の問題へ進む ➔</button>
     </div>
 
     <!-- 結果画面 -->
-    <div id="result-area" class="result-area card">
+    <div id="result-area" class="card screen-section">
         <div class="result-header">
             <h2>演習終了！お疲れ様でした</h2>
             <div class="score-circle">
@@ -437,7 +427,6 @@
             '東洋医学概論', '経絡経穴概論', '東洋医学臨床論', 'はり理論', 'きゅう理論'
         ];
 
-        // 柔軟なキー検索ヘルパー関数
         function getValue(obj, keys) {
             if (!obj) return "";
             for (let k of keys) {
@@ -579,8 +568,6 @@
             quizSet = masterData.filter(q => {
                 const qYear = getValue(q, ['試験の回数', '開催回', '回']);
                 const qSubject = getValue(q, ['教科', '分野', '科目']);
-                
-                // 通し番号・教科での番号・試験の番号のいずれかから番号を抽出
                 const qNumStr = getValue(q, ['全体通し番号', '通し番号', '教科での番号', '試験の番号', '問題番号', '番号']) || "0";
                 const qNum = parseInt(qNumStr.replace(/[^0-9]/g, '')) || 0;
 
