@@ -3,22 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>国家試験対策演習アプリ（編集機能付き）</title>
+  <title>国家試験対策演習アプリ</title>
+  <!-- CSVを正確に読み込むための外部ライブラリ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       margin: 0;
       padding: 20px;
       background-color: #f4f6f8;
       color: #333;
     }
     .container {
-      max-width: 760px;
+      max-width: 800px;
       margin: 0 auto;
       background: #fff;
       padding: 24px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .section-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #555;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      border-bottom: 1px dashed #ccc;
+      padding-bottom: 4px;
+    }
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .checkbox-card {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1.5px solid #007aff;
+      border-radius: 8px;
+      background-color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #007aff;
+      user-select: none;
+    }
+    .checkbox-card input {
+      margin-right: 8px;
+      transform: scale(1.2);
     }
     .header-bar {
       display: flex;
@@ -27,6 +61,15 @@
       border-bottom: 2px solid #eee;
       padding-bottom: 12px;
       margin-bottom: 20px;
+    }
+    .quiz-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #007aff;
+    }
+    .quiz-exam-info {
+      font-size: 0.95rem;
+      color: #666;
     }
     .mode-switch {
       display: flex;
@@ -37,44 +80,33 @@
       padding: 6px 12px;
       border-radius: 20px;
     }
-    .form-group {
-      margin-bottom: 12px;
+    .question-box {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      white-space: pre-wrap;
     }
-    .form-group label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: #555;
-      margin-bottom: 4px;
+    .options-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 24px 0;
     }
-    .form-group input, .form-group textarea, .form-group select {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-      font-size: 0.95rem;
+    .option-item {
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
     }
-    .form-group textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-    .form-row {
-      display: flex;
-      gap: 10px;
-    }
-    .form-row .form-group {
-      flex: 1;
-    }
-    .options-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .option-item:hover {
+      background-color: #f0f7ff;
+      border-color: #007aff;
     }
     .btn-container {
       display: flex;
       gap: 10px;
-      margin-top: 15px;
+      margin-top: 20px;
     }
     button {
       flex: 1;
@@ -87,186 +119,253 @@
       cursor: pointer;
       font-weight: bold;
     }
+    button:hover { background-color: #0056b3; }
     button:disabled { background-color: #ccc; cursor: not-allowed; }
     .save-btn { background-color: #34c759; }
     .save-btn:hover { background-color: #28a745; }
+    .result-box {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      background-color: #f8f9fa;
+      border-left: 5px solid #007aff;
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: bold; color: #555; margin-bottom: 4px; }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem;
+    }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .hidden { display: none; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header-bar">
-    <div>
-      <span id="quiz-title" style="font-weight: bold; font-size: 1.1rem;">問題演習</span>
-      <span id="quiz-exam-info" style="color: #666; font-size: 0.9rem; margin-left: 8px;">---</span>
+  <!-- 1. 条件設定画面 -->
+  <div id="setup-screen">
+    <h2 style="margin-top:0;">演習条件の設定</h2>
+
+    <div class="section-title">基礎科目</div>
+    <div class="checkbox-grid" id="basic-subjects">
+      <label class="checkbox-card"><input type="checkbox" value="医療概論" checked> 医療概論</label>
+      <label class="checkbox-card"><input type="checkbox" value="衛生学・公衆衛生学" checked> 衛生学・公衆衛生学</label>
+      <label class="checkbox-card"><input type="checkbox" value="関係法規" checked> 関係法規</label>
+      <label class="checkbox-card"><input type="checkbox" value="解剖学" checked> 解剖学</label>
+      <label class="checkbox-card"><input type="checkbox" value="生理学" checked> 生理学</label>
+      <label class="checkbox-card"><input type="checkbox" value="病理学概論" checked> 病理学概論</label>
+      <label class="checkbox-card"><input type="checkbox" value="臨床医学総論" checked> 臨床医学総論</label>
+      <label class="checkbox-card"><input type="checkbox" value="臨床医学各論" checked> 臨床医学各論</label>
+      <label class="checkbox-card"><input type="checkbox" value="リハビリテーション医学" checked> リハビリテーション医学</label>
     </div>
-    <!-- 編集モード切替 -->
-    <div class="mode-switch">
-      <input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode()">
-      <label for="edit-mode-toggle" style="cursor: pointer;">✏️ 編集モード</label>
+
+    <div class="section-title">専門科目</div>
+    <div class="checkbox-grid" id="special-subjects">
+      <label class="checkbox-card"><input type="checkbox" value="東洋医学概論" checked> 東洋医学概論</label>
+      <label class="checkbox-card"><input type="checkbox" value="経絡経穴概論" checked> 経絡経穴概論</label>
+      <label class="checkbox-card"><input type="checkbox" value="東洋医学臨床論" checked> 東洋医学臨床論</label>
+      <label class="checkbox-card"><input type="checkbox" value="はり理論" checked> はり理論</label>
+      <label class="checkbox-card"><input type="checkbox" value="きゅう理論" checked> きゅう理論</label>
     </div>
+
+    <button style="width: 100%; margin-top: 20px;" onclick="startQuiz()">演習を開始する</button>
   </div>
 
-  <!-- 【通常表示モード】 -->
-  <div id="view-mode">
-    <div class="question-box" id="question-text" style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;"></div>
-    <ul id="options-list" style="list-style: none; padding: 0;"></ul>
-    <div id="explanation-box" style="padding: 12px; background: #f8f9fa; border-left: 4px solid #007aff; margin-bottom: 15px;"></div>
-  </div>
-
-  <!-- 【編集モード】 (画面上でそのまま内容を更新) -->
-  <div id="edit-mode" class="hidden">
-    <div class="form-row">
-      <!-- 全体通し番号は編集不可 (disabled) -->
-      <div class="form-group">
-        <label>全体通し番号 (固定)</label>
-        <input type="text" id="edit-total-num" disabled style="background-color: #e9ecef;">
+  <!-- 2. 問題演習・編集画面 -->
+  <div id="quiz-screen" class="hidden">
+    <div class="header-bar">
+      <div>
+        <span class="quiz-title" id="quiz-title">問題演習</span>
+        <span class="quiz-exam-info" id="quiz-exam-info">---</span>
       </div>
-      <div class="form-group">
-        <label>教科</label>
-        <input type="text" id="edit-subject">
-      </div>
-      <div class="form-group">
-        <label>教科での番号</label>
-        <input type="text" id="edit-subject-num">
+      <div class="mode-switch">
+        <input type="checkbox" id="edit-mode-toggle" onchange="toggleEditMode()">
+        <label for="edit-mode-toggle" style="cursor: pointer;">✏️ 編集モード</label>
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label>試験の回数</label>
-        <input type="text" id="edit-exam-times">
-      </div>
-      <div class="form-group">
-        <label>試験の番号</label>
-        <input type="text" id="edit-exam-num">
-      </div>
-      <div class="form-group">
-        <label>大項目</label>
-        <input type="text" id="edit-cat-main">
-      </div>
-      <div class="form-group">
-        <label>中項目</label>
-        <input type="text" id="edit-cat-sub">
+    <!-- 通常表示モード -->
+    <div id="view-mode">
+      <div class="question-box" id="question-text">データを読み込み中...</div>
+      <ul class="options-list" id="options-list"></ul>
+      <div id="result-box" class="result-box hidden">
+        <div id="answer-status"></div>
+        <div id="explanation-text" style="margin-top: 8px;"></div>
       </div>
     </div>
 
-    <div class="form-group">
-      <label>問題文</label>
-      <textarea id="edit-question"></textarea>
+    <!-- 編集モード -->
+    <div id="edit-mode" class="hidden">
+      <div class="form-row">
+        <div class="form-group"><label>全体通し番号 (固定)</label><input type="text" id="edit-total-num" disabled style="background:#eee;"></div>
+        <div class="form-group"><label>教科</label><input type="text" id="edit-subject"></div>
+        <div class="form-group"><label>教科での番号</label><input type="text" id="edit-subject-num"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>試験の回数</label><input type="text" id="edit-exam-times"></div>
+        <div class="form-group"><label>試験の番号</label><input type="text" id="edit-exam-num"></div>
+        <div class="form-group"><label>大項目</label><input type="text" id="edit-cat-main"></div>
+        <div class="form-group"><label>中項目</label><input type="text" id="edit-cat-sub"></div>
+      </div>
+      <div class="form-group"><label>問題</label><textarea id="edit-question"></textarea></div>
+      <div class="options-grid">
+        <div class="form-group"><label>選択肢1</label><input type="text" id="edit-opt1"></div>
+        <div class="form-group"><label>選択肢2</label><input type="text" id="edit-opt2"></div>
+        <div class="form-group"><label>選択肢3</label><input type="text" id="edit-opt3"></div>
+        <div class="form-group"><label>選択肢4</label><input type="text" id="edit-opt4"></div>
+      </div>
+      <div class="form-group"><label>答え</label><input type="text" id="edit-answer" style="width:100px;"></div>
+      <div class="form-group"><label>解説</label><textarea id="edit-explanation"></textarea></div>
+      <button class="save-btn" onclick="saveToGitHub()">💾 GitHubに保存</button>
     </div>
 
-    <div class="options-grid">
-      <div class="form-group"><label>選択肢1</label><input type="text" id="edit-opt1"></div>
-      <div class="form-group"><label>選択肢2</label><input type="text" id="edit-opt2"></div>
-      <div class="form-group"><label>選択肢3</label><input type="text" id="edit-opt3"></div>
-      <div class="form-group"><label>選択肢4</label><input type="text" id="edit-opt4"></div>
+    <div class="btn-container">
+      <button id="prev-btn" onclick="prevQuestion()" disabled>前へ</button>
+      <button id="next-btn" onclick="nextQuestion()">次へ</button>
     </div>
-
-    <div class="form-group">
-      <label>答え (1〜4等)</label>
-      <input type="text" id="edit-answer" style="width: 120px;">
-    </div>
-
-    <div class="form-group">
-      <label>解説</label>
-      <textarea id="edit-explanation"></textarea>
-    </div>
-
-    <button class="save-btn" onclick="saveToGitHub()">💾 GitHubに保存（コミット）</button>
-  </div>
-
-  <!-- 前へ・次へボタン -->
-  <div class="btn-container">
-    <button id="prev-btn" onclick="prevQuestion()">前へ</button>
-    <button id="next-btn" onclick="nextQuestion()">次へ</button>
   </div>
 </div>
 
 <script>
-  // リポジトリ設定 (ご自身の設定に合わせて調整してください)
   const GITHUB_CONFIG = {
-    owner: "kaoman0079-ops",           // GitHubユーザー名
-    repo: "shinyu_kokusitest",          // リポジトリ名
-    path: "data.csv",                   // CSVファイルパス
-    branch: "main"                      // ブランチ名
+    owner: "kaoman0079-ops",
+    repo: "shinyu_kokusitest",
+    path: "data.csv",
+    branch: "main"
   };
 
-  let questions = [];
+  let rawQuestions = [];
+  let filteredQuestions = [];
   let currentIndex = 0;
-  let fileSha = ""; // GitHub更新に必要なファイルの識別HASH
 
-  // 初期読み込み (CSVからパース)
-  window.addEventListener('DOMContentLoaded', () => {
-    loadDataFromGitHub();
-  });
-
-  // GitHubからデータ取得
-  function loadDataFromGitHub() {
-    const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.path}?t=${Date.now()}`;
-    fetch(url)
-      .then(res => res.text())
-      .then(csvText => {
-        questions = parseCSV(csvText);
-        showQuestion(currentIndex);
-      })
-      .catch(err => console.error("データ読み込み失敗:", err));
+  function getValue(row, keys) {
+    for (const key of keys) {
+      if (row[key] !== undefined && row[key] !== null) return row[key];
+    }
+    return '';
   }
 
-  // 表示処理
+  // アプリ起動時にPapaParseでCSVを取得・解析
+  window.addEventListener('DOMContentLoaded', () => {
+    const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.path}?t=${Date.now()}`;
+    
+    Papa.parse(url, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        rawQuestions = results.data;
+      },
+      error: function(err) {
+        console.error("CSV読み込み失敗:", err);
+      }
+    });
+  });
+
+  function startQuiz() {
+    const checkedBoxes = document.querySelectorAll('#basic-subjects input:checked, #special-subjects input:checked');
+    const selectedSubjects = Array.from(checkedBoxes).map(cb => cb.value);
+
+    if (selectedSubjects.length === 0) {
+      alert('科目を1つ以上選択してください。');
+      return;
+    }
+
+    filteredQuestions = rawQuestions.filter(q => {
+      const subject = getValue(q, ['教科', '科目名', '科目']);
+      return selectedSubjects.includes(subject);
+    });
+
+    if (filteredQuestions.length === 0) {
+      alert('選択した科目の問題が見つかりませんでした。データが読み込まれているか確認してください。');
+      return;
+    }
+
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('quiz-screen').classList.remove('hidden');
+
+    currentIndex = 0;
+    showQuestion(currentIndex);
+  }
+
   function showQuestion(index) {
-    const q = questions[index];
+    const q = filteredQuestions[index];
     if (!q) return;
 
-    // 【通常表示】
-    document.getElementById('quiz-title').innerText = q['教科'] || '問題';
-    document.getElementById('quiz-exam-info').innerText = `${q['試験の回数']} 問題${q['試験の番号']} (通し: No.${q['全体通し番号']})`;
-    document.getElementById('question-text').innerText = `Q${index + 1}. ${q['問題']}`;
-    
-    const optList = document.getElementById('options-list');
-    optList.innerHTML = '';
+    // 通常表示ヘ反映
+    const examNum = getValue(q, ['試験の番号', '問題番号', '番号']);
+    const totalNum = getValue(q, ['全体通し番号', '通し番号']);
+    const totalText = totalNum ? ` (通し: No.${totalNum})` : '';
+    const examInfo = `${getValue(q, ['試験の回数', '開催回'])} ${examNum}${totalText}`;
+
+    document.getElementById('quiz-exam-info').innerText = examInfo;
+    document.getElementById('quiz-title').innerText = getValue(q, ['教科', '科目名', '科目']) || '問題演習';
+    document.getElementById('question-text').innerText = `Q${index + 1}. ${getValue(q, ['問題', '問題文'])}`;
+
+    const optionsList = document.getElementById('options-list');
+    optionsList.innerHTML = '';
+
     ['選択肢1', '選択肢2', '選択肢3', '選択肢4'].forEach((key, idx) => {
       if (q[key]) {
         const li = document.createElement('li');
-        li.style.cssText = 'padding:10px; margin-bottom:6px; border:1px solid #ddd; border-radius:6px;';
+        li.className = 'option-item';
         li.innerText = `${idx + 1}. ${q[key]}`;
-        optList.appendChild(li);
+        li.onclick = () => selectOption(idx + 1);
+        optionsList.appendChild(li);
       }
     });
-    document.getElementById('explanation-box').innerText = `【答え】${q['答え']}\n【解説】${q['解説'] || 'なし'}`;
 
-    // 【編集フォームヘ反映】
-    document.getElementById('edit-total-num').value = q['全体通し番号'] || '';
-    document.getElementById('edit-subject').value = q['教科'] || '';
-    document.getElementById('edit-subject-num').value = q['教科での番号'] || '';
-    document.getElementById('edit-exam-times').value = q['試験の回数'] || '';
-    document.getElementById('edit-exam-num').value = q['試験の番号'] || '';
-    document.getElementById('edit-cat-main').value = q['大項目'] || '';
-    document.getElementById('edit-cat-sub').value = q['中項目'] || '';
-    document.getElementById('edit-question').value = q['問題'] || '';
-    document.getElementById('edit-opt1').value = q['選択肢1'] || '';
-    document.getElementById('edit-opt2').value = q['選択肢2'] || '';
-    document.getElementById('edit-opt3').value = q['選択肢3'] || '';
-    document.getElementById('edit-opt4').value = q['選択肢4'] || '';
-    document.getElementById('edit-answer').value = q['答え'] || '';
-    document.getElementById('edit-explanation').value = q['解説'] || '';
+    // 編集フォームへ反映
+    document.getElementById('edit-total-num').value = getValue(q, ['全体通し番号', '通し番号']);
+    document.getElementById('edit-subject').value = getValue(q, ['教科', '科目']);
+    document.getElementById('edit-subject-num').value = getValue(q, ['教科での番号']);
+    document.getElementById('edit-exam-times').value = getValue(q, ['試験の回数']);
+    document.getElementById('edit-exam-num').value = getValue(q, ['試験の番号']);
+    document.getElementById('edit-cat-main').value = getValue(q, ['大項目']);
+    document.getElementById('edit-cat-sub').value = getValue(q, ['中項目']);
+    document.getElementById('edit-question').value = getValue(q, ['問題', '問題文']);
+    document.getElementById('edit-opt1').value = getValue(q, ['選択肢1']);
+    document.getElementById('edit-opt2').value = getValue(q, ['選択肢2']);
+    document.getElementById('edit-opt3').value = getValue(q, ['選択肢3']);
+    document.getElementById('edit-opt4').value = getValue(q, ['選択肢4']);
+    document.getElementById('edit-answer').value = getValue(q, ['答え', '正解']);
+    document.getElementById('edit-explanation').value = getValue(q, ['解説']);
 
-    // ボタン活性化制御
     document.getElementById('prev-btn').disabled = (index === 0);
-    document.getElementById('next-btn').disabled = (index === questions.length - 1);
+    document.getElementById('next-btn').disabled = (index === filteredQuestions.length - 1);
+    document.getElementById('result-box').classList.add('hidden');
   }
 
-  // 編集モード切替
+  function selectOption(optionIndex) {
+    const q = filteredQuestions[currentIndex];
+    const correctAnswer = getValue(q, ['答え', '正解', '解答']);
+    const resultBox = document.getElementById('result-box');
+    const answerStatus = document.getElementById('answer-status');
+    const explanationText = document.getElementById('explanation-text');
+
+    resultBox.classList.remove('hidden');
+
+    if (String(optionIndex) === String(correctAnswer)) {
+      answerStatus.innerHTML = '<strong style="color: #2e7d32;">〇 正解！</strong>';
+    } else {
+      answerStatus.innerHTML = `<strong style="color: #c62828;">× 不正解... (正解: ${correctAnswer})</strong>`;
+    }
+
+    const exp = getValue(q, ['解説']);
+    explanationText.innerText = exp ? `解説: ${exp}` : '';
+  }
+
   function toggleEditMode() {
     const isEdit = document.getElementById('edit-mode-toggle').checked;
     document.getElementById('view-mode').classList.toggle('hidden', isEdit);
     document.getElementById('edit-mode').classList.toggle('hidden', !isEdit);
   }
 
-  // フォームの入力内容を配列オブジェクトに反映
   function updateCurrentQuestionFromForm() {
-    const q = questions[currentIndex];
+    const q = filteredQuestions[currentIndex];
     q['教科'] = document.getElementById('edit-subject').value;
     q['教科での番号'] = document.getElementById('edit-subject-num').value;
     q['試験の回数'] = document.getElementById('edit-exam-times').value;
@@ -282,23 +381,20 @@
     q['解説'] = document.getElementById('edit-explanation').value;
   }
 
-  // GitHubへAPI経由で保存（書き込み）
   async function saveToGitHub() {
     let token = localStorage.getItem('github_token');
     if (!token) {
-      token = prompt("GitHub Personal Access Tokenを入力してください（次回以降は自動保存されます）:");
+      token = prompt("先ほど発行した GitHub Personal Access Token (ghp_...) を入力してください:");
       if (!token) return;
       localStorage.setItem('github_token', token);
     }
 
-    // 現在の画面の入力内容をメモリ上のデータに更新
     updateCurrentQuestionFromForm();
 
-    // 全配列をCSV文字列へ変換
-    const csvContent = arrayToCSV(questions);
+    // PapaParseでCSV文字列に変換
+    const csvContent = Papa.unparse(rawQuestions);
 
     try {
-      // 1. 最新のSHA（ファイル識別ID）を取得
       const getFileUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
       const fileRes = await fetch(getFileUrl, {
         headers: { Authorization: `token ${token}` }
@@ -311,12 +407,15 @@
       }
 
       const fileData = await fileRes.json();
-      const currentSha = fileData.sha;
 
-      // 2. Base64エンコードしてGitHubへPUT送信
+      // UTF-8対応のBase64エンコード
       const encoder = new TextEncoder();
-      const dataUint8 = encoder.encode(csvContent);
-      const base64Content = btoa(String.fromCharCode(...dataUint8));
+      const uint8 = encoder.encode(csvContent);
+      let binary = '';
+      for (let i = 0; i < uint8.length; i++) {
+        binary += String.fromCharCode(uint8[i]);
+      }
+      const base64Content = btoa(binary);
 
       const updateRes = await fetch(getFileUrl, {
         method: "PUT",
@@ -325,65 +424,25 @@
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          message: `Update question (通し番号: ${questions[currentIndex]['全体通し番号']}) via Web App`,
+          message: `Update question (No.${filteredQuestions[currentIndex]['全体通し番号']}) via Web App`,
           content: base64Content,
-          sha: currentSha,
+          sha: fileData.sha,
           branch: GITHUB_CONFIG.branch
         })
       });
 
       if (updateRes.ok) {
-        alert("GitHubへの保存が完了しました！");
-        // 編集モードをオフにして再描画
+        alert("GitHubへの保存が成功しました！");
         document.getElementById('edit-mode-toggle').checked = false;
         toggleEditMode();
         showQuestion(currentIndex);
       } else {
-        alert("保存に失敗しました。アクセストークンの権限などを確認してください。");
+        alert("保存に失敗しました。トークンの権限（repo）を確認してください。");
       }
     } catch (err) {
       console.error(err);
       alert("エラーが発生しました: " + err.message);
     }
-  }
-
-  // CSVパース関数
-  function parseCSV(text) {
-    const lines = text.trim().split(/\r\n|\n/);
-    const headers = lines[0].split(',');
-    const results = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i]) continue;
-      // カンマ区切り（簡易対応）
-      const values = lines[i].split(',');
-      const obj = {};
-      headers.forEach((h, idx) => {
-        obj[h.trim()] = values[idx] ? values[idx].trim() : '';
-      });
-      results.push(obj);
-    }
-    return results;
-  }
-
-  // オブジェクト配列 -> CSV文字列変換
-  function arrayToCSV(arr) {
-    const headers = ["全体通し番号","教科","教科での番号","試験の回数","試験の番号","大項目","中項目","問題","選択肢1","選択肢2","選択肢3","選択肢4","答え","解説"];
-    const lines = [headers.join(',')];
-
-    arr.forEach(row => {
-      const line = headers.map(h => {
-        let val = row[h] || '';
-        // カンマや改行が含まれる場合はダブルクォーテーションで囲む
-        if (val.includes(',') || val.includes('\n') || val.includes('"')) {
-          val = `"${val.replace(/"/g, '""')}"`;
-        }
-        return val;
-      }).join(',');
-      lines.push(line);
-    });
-
-    return lines.join('\n');
   }
 
   function prevQuestion() {
@@ -394,7 +453,7 @@
   }
 
   function nextQuestion() {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < filteredQuestions.length - 1) {
       currentIndex++;
       showQuestion(currentIndex);
     }
