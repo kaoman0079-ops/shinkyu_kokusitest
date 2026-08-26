@@ -4,55 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>国家試験対策演習アプリ</title>
-  <!-- CSVを正確に読み込むための外部ライブラリ -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 20px;
       background-color: #f4f6f8;
       color: #333;
     }
     .container {
-      max-width: 800px;
+      max-width: 760px;
       margin: 0 auto;
       background: #fff;
       padding: 24px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-    .section-title {
-      font-size: 1rem;
-      font-weight: bold;
-      color: #555;
-      margin-top: 20px;
-      margin-bottom: 10px;
-      border-bottom: 1px dashed #ccc;
-      padding-bottom: 4px;
-    }
-    .checkbox-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .checkbox-card {
-      display: flex;
-      align-items: center;
-      padding: 10px 12px;
-      border: 1.5px solid #007aff;
-      border-radius: 8px;
-      background-color: #fff;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: bold;
-      color: #007aff;
-      user-select: none;
-    }
-    .checkbox-card input {
-      margin-right: 8px;
-      transform: scale(1.2);
     }
     .header-bar {
       display: flex;
@@ -63,41 +29,46 @@
       margin-bottom: 20px;
     }
     .quiz-title {
-      font-size: 1.2rem;
       font-weight: bold;
-      color: #007aff;
+      font-size: 1.1rem;
     }
     .quiz-exam-info {
-      font-size: 0.95rem;
       color: #666;
+      font-size: 0.9rem;
+      margin-left: 8px;
     }
     .question-box {
       font-size: 1.1rem;
       line-height: 1.6;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       white-space: pre-wrap;
     }
     .options-list {
       list-style: none;
       padding: 0;
-      margin: 0 0 24px 0;
+      margin: 0 0 20px 0;
     }
     .option-item {
-      padding: 14px 16px;
-      margin-bottom: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
       border: 1px solid #ddd;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.2s, border-color 0.2s;
+      transition: background-color 0.2s;
     }
     .option-item:hover {
       background-color: #f0f7ff;
-      border-color: #007aff;
+    }
+    .result-box {
+      padding: 12px;
+      background: #f8f9fa;
+      border-left: 4px solid #007aff;
+      margin-bottom: 15px;
     }
     .btn-container {
       display: flex;
       gap: 10px;
-      margin-top: 20px;
+      margin-top: 15px;
     }
     button {
       flex: 1;
@@ -110,72 +81,36 @@
       cursor: pointer;
       font-weight: bold;
     }
-    button:hover { background-color: #0056b3; }
-    button:disabled { background-color: #ccc; cursor: not-allowed; }
-    .result-box {
-      margin-top: 20px;
-      padding: 16px;
-      border-radius: 8px;
-      background-color: #f8f9fa;
-      border-left: 5px solid #007aff;
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
     }
-    .hidden { display: none; }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <!-- 1. 条件設定画面 -->
-  <div id="setup-screen">
-    <h2 style="margin-top:0;">演習条件の設定</h2>
-
-    <div class="section-title">基礎科目</div>
-    <div class="checkbox-grid" id="basic-subjects">
-      <label class="checkbox-card"><input type="checkbox" value="医療概論" checked> 医療概論</label>
-      <label class="checkbox-card"><input type="checkbox" value="衛生学・公衆衛生学" checked> 衛生学・公衆衛生学</label>
-      <label class="checkbox-card"><input type="checkbox" value="関係法規" checked> 関係法規</label>
-      <label class="checkbox-card"><input type="checkbox" value="解剖学" checked> 解剖学</label>
-      <label class="checkbox-card"><input type="checkbox" value="生理学" checked> 生理学</label>
-      <label class="checkbox-card"><input type="checkbox" value="病理学概論" checked> 病理学概論</label>
-      <label class="checkbox-card"><input type="checkbox" value="臨床医学総論" checked> 臨床医学総論</label>
-      <label class="checkbox-card"><input type="checkbox" value="臨床医学各論" checked> 臨床医学各論</label>
-      <label class="checkbox-card"><input type="checkbox" value="リハビリテーション医学" checked> リハビリテーション医学</label>
+  <div class="header-bar">
+    <div>
+      <span class="quiz-title" id="quiz-title">問題演習</span>
+      <span class="quiz-exam-info" id="quiz-exam-info">---</span>
     </div>
-
-    <div class="section-title">専門科目</div>
-    <div class="checkbox-grid" id="special-subjects">
-      <label class="checkbox-card"><input type="checkbox" value="東洋医学概論" checked> 東洋医学概論</label>
-      <label class="checkbox-card"><input type="checkbox" value="経絡経穴概論" checked> 経絡経穴概論</label>
-      <label class="checkbox-card"><input type="checkbox" value="東洋医学臨床論" checked> 東洋医学臨床論</label>
-      <label class="checkbox-card"><input type="checkbox" value="はり理論" checked> はり理論</label>
-      <label class="checkbox-card"><input type="checkbox" value="きゅう理論" checked> きゅう理論</label>
-    </div>
-
-    <button style="width: 100%; margin-top: 20px;" onclick="startQuiz()">演習を開始する</button>
   </div>
 
-  <!-- 2. 問題演習画面 -->
-  <div id="quiz-screen" class="hidden">
-    <div class="header-bar">
-      <div>
-        <span class="quiz-title" id="quiz-title">問題演習</span>
-        <span class="quiz-exam-info" id="quiz-exam-info">---</span>
-      </div>
-      <button onclick="backToSetup()" style="flex: none; padding: 6px 12px; font-size: 0.85rem; background-color: #6c757d;">条件変更</button>
-    </div>
+  <div class="question-box" id="question-text">データを読み込み中...</div>
+  <ul class="options-list" id="options-list"></ul>
 
-    <div class="question-box" id="question-text">データを読み込み中...</div>
-    <ul class="options-list" id="options-list"></ul>
-    
-    <div id="result-box" class="result-box hidden">
-      <div id="answer-status"></div>
-      <div id="explanation-text" style="margin-top: 8px;"></div>
-    </div>
+  <div id="result-box" class="result-box hidden">
+    <div id="answer-status"></div>
+    <div id="explanation-text" style="margin-top: 6px; font-size: 0.95rem;"></div>
+  </div>
 
-    <div class="btn-container">
-      <button id="prev-btn" onclick="prevQuestion()" disabled>前へ</button>
-      <button id="next-btn" onclick="nextQuestion()">次へ</button>
-    </div>
+  <div class="btn-container">
+    <button id="prev-btn" onclick="prevQuestion()" disabled>前へ</button>
+    <button id="next-btn" onclick="nextQuestion()">次へ</button>
   </div>
 </div>
 
@@ -187,99 +122,59 @@
     branch: "main"
   };
 
-  let rawQuestions = [];
-  let filteredQuestions = [];
+  let questions = [];
   let currentIndex = 0;
 
-  function getValue(row, keys) {
-    for (const key of keys) {
-      if (row[key] !== undefined && row[key] !== null) return row[key];
-    }
-    return '';
-  }
-
-  // アプリ起動時にPapaParseでCSVを取得・解析
   window.addEventListener('DOMContentLoaded', () => {
-    const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.path}?t=${Date.now()}`;
-    
-    Papa.parse(url, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        rawQuestions = results.data;
-      },
-      error: function(err) {
-        console.error("CSV読み込み失敗:", err);
-      }
-    });
+    loadData();
   });
 
-  function startQuiz() {
-    const checkedBoxes = document.querySelectorAll('#basic-subjects input:checked, #special-subjects input:checked');
-    const selectedSubjects = Array.from(checkedBoxes).map(cb => cb.value);
-
-    if (selectedSubjects.length === 0) {
-      alert('科目を1つ以上選択してください。');
-      return;
-    }
-
-    filteredQuestions = rawQuestions.filter(q => {
-      const subject = getValue(q, ['教科', '科目名', '科目']);
-      return selectedSubjects.includes(subject);
-    });
-
-    if (filteredQuestions.length === 0) {
-      alert('選択した科目の問題が見つかりませんでした。データが読み込まれているか確認してください。');
-      return;
-    }
-
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('quiz-screen').classList.remove('hidden');
-
-    currentIndex = 0;
-    showQuestion(currentIndex);
-  }
-
-  function backToSetup() {
-    document.getElementById('quiz-screen').classList.add('hidden');
-    document.getElementById('setup-screen').classList.remove('hidden');
+  function loadData() {
+    const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.path}?t=${Date.now()}`;
+    fetch(url)
+      .then(res => res.text())
+      .then(csvText => {
+        questions = parseCSV(csvText);
+        if (questions.length > 0) {
+          showQuestion(currentIndex);
+        } else {
+          document.getElementById('question-text').innerText = "問題データが見つかりませんでした。";
+        }
+      })
+      .catch(err => {
+        console.error("読み込みエラー:", err);
+        document.getElementById('question-text').innerText = "データの読み込みに失敗しました。";
+      });
   }
 
   function showQuestion(index) {
-    const q = filteredQuestions[index];
+    const q = questions[index];
     if (!q) return;
 
-    const examNum = getValue(q, ['試験の番号', '問題番号', '番号']);
-    const totalNum = getValue(q, ['全体通し番号', '通し番号']);
-    const totalText = totalNum ? ` (通し: No.${totalNum})` : '';
-    const examInfo = `${getValue(q, ['試験の回数', '開催回'])} ${examNum}${totalText}`;
+    document.getElementById('quiz-title').innerText = q['教科'] || '問題演習';
+    document.getElementById('quiz-exam-info').innerText = `${q['試験の回数'] || ''} ${q['試験の番号'] || ''}`;
+    document.getElementById('question-text').innerText = `Q${index + 1}. ${q['問題'] || ''}`;
 
-    document.getElementById('quiz-exam-info').innerText = examInfo;
-    document.getElementById('quiz-title').innerText = getValue(q, ['教科', '科目名', '科目']) || '問題演習';
-    document.getElementById('question-text').innerText = `Q${index + 1}. ${getValue(q, ['問題', '問題文'])}`;
-
-    const optionsList = document.getElementById('options-list');
-    optionsList.innerHTML = '';
-
+    const optList = document.getElementById('options-list');
+    optList.innerHTML = '';
     ['選択肢1', '選択肢2', '選択肢3', '選択肢4'].forEach((key, idx) => {
       if (q[key]) {
         const li = document.createElement('li');
         li.className = 'option-item';
         li.innerText = `${idx + 1}. ${q[key]}`;
         li.onclick = () => selectOption(idx + 1);
-        optionsList.appendChild(li);
+        optList.appendChild(li);
       }
     });
 
-    document.getElementById('prev-btn').disabled = (index === 0);
-    document.getElementById('next-btn').disabled = (index === filteredQuestions.length - 1);
     document.getElementById('result-box').classList.add('hidden');
+    document.getElementById('prev-btn').disabled = (index === 0);
+    document.getElementById('next-btn').disabled = (index === questions.length - 1);
   }
 
   function selectOption(optionIndex) {
-    const q = filteredQuestions[currentIndex];
-    const correctAnswer = getValue(q, ['答え', '正解', '解答']);
+    const q = questions[currentIndex];
+    const correctAnswer = q['答え'];
     const resultBox = document.getElementById('result-box');
     const answerStatus = document.getElementById('answer-status');
     const explanationText = document.getElementById('explanation-text');
@@ -292,8 +187,31 @@
       answerStatus.innerHTML = `<strong style="color: #c62828;">× 不正解... (正解: ${correctAnswer})</strong>`;
     }
 
-    const exp = getValue(q, ['解説']);
-    explanationText.innerText = exp ? `解説: ${exp}` : '';
+    explanationText.innerText = q['解説'] ? `解説: ${q['解説']}` : '';
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split(/\r\n|\n/);
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const results = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      
+      // ダブルクォーテーションを考慮したシンプルな分割
+      const values = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
+      const obj = {};
+      
+      headers.forEach((h, idx) => {
+        let val = values[idx] ? values[idx].trim() : '';
+        val = val.replace(/^"|"$/g, '').replace(/""/g, '"');
+        obj[h] = val;
+      });
+      results.push(obj);
+    }
+    return results;
   }
 
   function prevQuestion() {
@@ -304,7 +222,7 @@
   }
 
   function nextQuestion() {
-    if (currentIndex < filteredQuestions.length - 1) {
+    if (currentIndex < questions.length - 1) {
       currentIndex++;
       showQuestion(currentIndex);
     }
