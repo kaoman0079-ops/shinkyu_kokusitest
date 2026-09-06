@@ -28,6 +28,7 @@ function mergeCSVs() {
 
   let combinedRows = [];
   let isFirstFile = true;
+  let totalCounter = 1; // 全体通し番号のカウンター
 
   files.forEach(file => {
     const filePath = path.join(CSV_DIR, file);
@@ -36,17 +37,30 @@ function mergeCSVs() {
 
     if (lines.length === 0) return;
 
+    // 1つ目のファイルからヘッダー（1行目）を取得して追加
     if (isFirstFile) {
-      combinedRows.push(...lines);
+      combinedRows.push(lines[0]);
       isFirstFile = false;
-    } else {
-      combinedRows.push(...lines.slice(1));
     }
+
+    // 2行目以降（データ行）の処理
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // カンマで分割して先頭の通し番号を書き換え
+      const columns = line.split(',');
+      columns[0] = totalCounter; // 先頭の番号を全体通し番号に置換
+      
+      combinedRows.push(columns.join(','));
+      totalCounter++;
+    }
+
     console.log(`結合完了: ${file}`);
   });
 
   fs.writeFileSync(OUTPUT_FILE, combinedRows.join('\n'), 'utf8');
-  console.log(`\n統合成功: ${path.basename(OUTPUT_FILE)} を生成しました！`);
+  console.log(`\n統合成功: ${path.basename(OUTPUT_FILE)} を生成しました！（総問題数: ${totalCounter - 1}）`);
 }
 
 mergeCSVs();
