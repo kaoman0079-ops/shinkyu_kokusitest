@@ -1,0 +1,32 @@
+name: Merge CSVs
+
+on:
+  push:
+    paths:
+      - 'Csv/**'
+  workflow_dispatch: # 手動実行ボタンも有効化
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Merge Script
+        run: node merge_csv.js
+
+      - name: Commit and Push merged CSV
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data_*.csv
+          git commit -m "Auto-merge CSV files" || exit 0
+          git push
