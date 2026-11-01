@@ -365,6 +365,21 @@
         .review-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
         .review-item { padding: 11px 13px; background: #fbf8f0; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; font-size: 0.9rem; }
         .review-icon { margin-right: 10px; font-weight: bold; font-size: 1.1rem; width: 24px; text-align: center; }
+        .review-item { display: block; }
+        .review-details { margin-top: 8px; }
+        .review-details summary { cursor: pointer; color: var(--accent, #2f4a7d); font-size: 0.82rem; font-weight: 700; }
+        .review-detail-body { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+        .review-q { font-weight: 600; margin-bottom: 8px; line-height: 1.6; }
+        .review-opt { padding: 5px 9px; border-radius: 8px; margin-bottom: 4px; background: #fff; border: 1px solid var(--border); font-size: 0.86rem; }
+        .review-opt.is-correct { background: #ecfdf5; border-color: #6ee7b7; }
+        .review-opt.is-wrong { background: #fef2f2; border-color: #fca5a5; }
+        .review-exp { margin-top: 8px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 9px 11px; font-size: 0.86rem; line-height: 1.6; }
+        .study-panel { margin: 18px 0 6px; padding: 14px; background: #fbf8f0; border: 1px solid var(--border); border-radius: 12px; }
+        .study-stats { font-size: 0.9rem; font-weight: 700; color: #475569; margin-bottom: 10px; }
+        .study-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-weak { background: #b45309; color: #fff; border: none; padding: 10px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
+        .btn-weak:disabled { background: #d6c9a8; cursor: not-allowed; }
+        .study-note { font-size: 0.78rem; color: #64748b; margin-top: 8px; line-height: 1.5; }
 
     </style>
 
@@ -490,6 +505,15 @@
 
 
 
+        <div class="study-panel">
+            <div id="study-stats" class="study-stats">📊 学習記録を読み込み中...</div>
+            <div class="study-actions">
+                <button type="button" id="weak-btn" class="btn-weak" onclick="startWeakQuiz()">🎯 苦手問題だけ解く（<span id="weak-count">0</span>問）</button>
+                <button type="button" class="btn-quick" onclick="clearWrong()">苦手リストをリセット</button>
+            </div>
+            <p class="study-note">間違えた問題は自動で「苦手リスト」に貯まります。苦手モードで正解するとリストから外れます。記録はこの端末内に保存されます。</p>
+        </div>
+
         <button id="start-btn" class="btn-primary" onclick="startQuiz()" disabled>同期をお待ちください</button>
 
     </div>
@@ -598,6 +622,71 @@
 
         let score = 0;
 
+        let weakMode = false;
+
+        const LS_WRONG = 'sk_wrong_ids';
+        const LS_STATS = 'sk_stats';
+
+        function loadWrong() {
+            try { return JSON.parse(localStorage.getItem(LS_WRONG)) || []; } catch(e) { return []; }
+        }
+
+        function saveWrong(arr) {
+            try { localStorage.setItem(LS_WRONG, JSON.stringify(arr)); } catch(e) {}
+        }
+
+        function recordAnswer(q, isCorrect) {
+            const id = getValue(q, ['全体通し番号', '通し番号']);
+            let wrong = loadWrong();
+            if (!isCorrect && id && !wrong.includes(id)) wrong.push(id);
+            if (isCorrect && weakMode && id) wrong = wrong.filter(x => x !== id);
+            saveWrong(wrong);
+            let st = {};
+            try { st = JSON.parse(localStorage.getItem(LS_STATS)) || {}; } catch(e) {}
+            st.answered = (st.answered || 0) + 1;
+            st.correct = (st.correct || 0) + (isCorrect ? 1 : 0);
+            try { localStorage.setItem(LS_STATS, JSON.stringify(st)); } catch(e) {}
+        }
+
+        function updateStudyPanel() {
+            const wrong = loadWrong();
+            const cntEl = document.getElementById('weak-count');
+            if (cntEl) cntEl.textContent = wrong.length;
+            const wb = document.getElementById('weak-btn');
+            if (wb) wb.disabled = (wrong.length === 0);
+            let st = {};
+            try { st = JSON.parse(localStorage.getItem(LS_STATS)) || {}; } catch(e) {}
+            const sEl = document.getElementById('study-stats');
+            if (sEl) {
+                if (st.answered) {
+                    const rate = Math.round(st.correct / st.answered * 100);
+                    sEl.textContent = `📊 学習記録：通算 ${st.answered}問回答 ・ 正答率 ${rate}% ・ 苦手 ${wrong.length}問`;
+                } else {
+                    sEl.textContent = '📊 学習記録：まだ記録がありません。解いた問題の記録がここに貯まります。';
+                }
+            }
+        }
+
+        function startWeakQuiz() {
+            const wrong = loadWrong();
+            if (!wrong.length) { alert('苦手リストは空です。まずは普通に解いてみましょう。'); return; }
+            weakMode = true;
+            quizSet = masterData.filter(q => wrong.includes(getValue(q, ['全体通し番号', '通し番号'])));
+            if (!quizSet.length) { alert('苦手リストの問題がデータ内に見つかりませんでした。'); return; }
+            quizSet.sort(() => Math.random() - 0.5);
+            const count = parseInt(document.getElementById('quiz-count').value);
+            if (count < quizSet.length) quizSet = quizSet.slice(0, count);
+            currentIndex = 0;
+            score = 0;
+            document.getElementById('setup-area').classList.remove('active');
+            document.getElementById('quiz-area').classList.add('active');
+            showQuestion();
+        }
+
+        function clearWrong() {
+            if (confirm('苦手リストをすべて消しますか？')) { saveWrong([]); updateStudyPanel(); }
+        }
+
 
 
         const MASTER_BASIC_SUBJECTS = [
@@ -693,6 +782,8 @@
                 document.getElementById('start-btn').disabled = false;
 
                 document.getElementById('start-btn').innerText = "演習を開始する！";
+
+                updateStudyPanel();
 
             } catch (e) {
 
@@ -970,6 +1061,8 @@
 
         function startQuiz() {
 
+            weakMode = false;
+
             const year = document.getElementById('filter-year').value;
 
             const startNum = parseInt(document.getElementById('num-start').value) || null;
@@ -1190,6 +1283,8 @@
 
             const q = quizSet[currentIndex];
 
+            q.userSelected = selected;
+
             const rawAnswer = getValue(q, ['答え', '正解', '解答']);
 
             const correct = parseInt(rawAnswer.replace(/[^0-9]/g, ''));
@@ -1253,6 +1348,8 @@
             expText.innerHTML = explanationHTML;
 
 
+
+            recordAnswer(q, selected === correct);
 
             document.getElementById('next-btn').style.display = 'block';
 
@@ -1331,6 +1428,29 @@
                         </div>
 
                     `;
+
+                    const det = document.createElement('details');
+                    det.className = 'review-details';
+                    const sum = document.createElement('summary');
+                    sum.textContent = '問題と解説を見る';
+                    det.appendChild(sum);
+                    const body = document.createElement('div');
+                    body.className = 'review-detail-body';
+                    const correctNum = parseInt((getValue(q, ['答え', '正解', '解答']) || '').replace(/[^0-9]/g, ''));
+                    let optsHtml = '';
+                    for (let k = 1; k <= 4; k++) {
+                        const ot = cleanOptionText(getValue(q, [`選択肢${k}`, `選択肢 ${k}`, `肢${k}`]) || '');
+                        let mark = '';
+                        let cls = '';
+                        if (k === correctNum) { mark = ' ◯正解'; cls = ' is-correct'; }
+                        if (q.userSelected === k && k !== correctNum) { mark = ' ✖あなたの回答'; cls = ' is-wrong'; }
+                        optsHtml += `<div class="review-opt${cls}">${k}. ${formatText(ot)}${mark}</div>`;
+                    }
+                    const expVal2 = getValue(q, ['解説', '問題解説']);
+                    body.innerHTML = `<div class="review-q">${formatText(getValue(q, ['問題', '問題文', '問']) || '')}</div>${optsHtml}` + (expVal2 ? `<div class="review-exp">${formatText(expVal2)}</div>` : '');
+                    det.appendChild(body);
+                    if (!isCorrect) det.open = true;
+                    li.appendChild(det);
 
                     listContainer.appendChild(li);
 
