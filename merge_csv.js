@@ -48,10 +48,8 @@ function mergeCSVs() {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // カンマで分割して先頭の通し番号を書き換え
+      // カンマで分割（全体通し番号はソースCSVの値をそのまま保持する）
       const columns = line.split(',');
-      columns[0] = totalCounter; // 先頭の番号を全体通し番号に置換
-      
       combinedRows.push(columns.join(','));
       totalCounter++;
     }
