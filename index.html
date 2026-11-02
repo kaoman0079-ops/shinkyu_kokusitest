@@ -395,6 +395,7 @@
         .btn-prev { flex: 1; background: #fff; border: 1.5px solid var(--border); color: #5b6068; padding: 14px; border-radius: 14px; cursor: pointer; font-size: 0.95rem; font-family: inherit; font-weight: 700; }
         .btn-prev:disabled { opacity: 0.4; cursor: not-allowed; }
         #exam-next-btn { flex: 2; margin-top: 0; }
+        #exam-nav .btn-next { display: block; }
         .weak-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
         .weak-table td, .weak-table th { padding: 7px 6px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
         .weak-bar-bg { background: #e9e4d3; border-radius: 6px; height: 8px; min-width: 70px; overflow: hidden; }
@@ -790,7 +791,7 @@
             const barColor = r => r < 0.5 ? '#bf443c' : (r < 0.7 ? '#d9a441' : '#2e7d5b');
             let html = '<table class="weak-table"><tr><th>科目</th><th>正答率</th><th></th><th></th></tr>';
             rows.forEach(r => {
-                html += `<tr><td>${r.k}</td><td>${Math.round(r.rate * 100)}%<br><span style="font-size:0.75rem; color:#64748b;">${r.c}/${r.a}問</span></td><td><div class="weak-bar-bg"><div class="weak-bar" style="width:${Math.round(r.rate * 100)}%; background:${barColor(r.rate)};"></div></div></td><td><button type="button" class="btn-drill" onclick="startDrill(${JSON.stringify(r.k)}, null, null)">解く</button></td></tr>`;
+                html += `<tr><td>${r.k}</td><td>${Math.round(r.rate * 100)}%<br><span style="font-size:0.75rem; color:#64748b;">${r.c}/${r.a}問</span></td><td><div class="weak-bar-bg"><div class="weak-bar" style="width:${Math.round(r.rate * 100)}%; background:${barColor(r.rate)};"></div></div></td><td><button type="button" class="btn-drill" onclick='startDrill(${JSON.stringify(r.k)}, null, null)'>解く</button></td></tr>`;
             });
             html += '</table>';
             document.getElementById('weak-subjects').innerHTML = html;
