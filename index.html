@@ -1325,13 +1325,13 @@
 
 
 
-            const rawCorrectText = getValue(q, [`選択肢${correct}`, `選択肢 ${correct}`]);
-
-            const correctText = formatText(cleanOptionText(rawCorrectText));
+            const correctText = correctNums.map(cn => `${cn}. ` + formatText(cleanOptionText(getValue(q, [`選択肢${cn}`, `選択肢 ${cn}`]) || ''))).join(' ／ ');
 
 
 
-            let explanationHTML = `<p style="font-weight:700; color:#1e293b; margin-bottom:8px;">正解：${correct}. ${correctText}</p>`;
+
+
+            let explanationHTML = `<p style="font-weight:700; color:#1e293b; margin-bottom:8px;">正解：${correctText}</p>`;
 
             
 
