@@ -447,7 +447,29 @@
 
 
 
+                        <div class="form-control">
+
+                <label for="filter-bigcat">分野（大項目）で絞り込む</label>
+
+                <select id="filter-bigcat"><option value="all">すべての大項目</option></select>
+
+            </div>
+
+
+
             <div class="form-control">
+
+                <label for="filter-midcat">分野（中項目）で絞り込む</label>
+
+                <select id="filter-midcat"><option value="all">すべての中項目</option></select>
+
+                <p class="study-note" id="cat-count" style="margin-top:6px;"></p>
+
+            </div>
+
+
+
+<div class="form-control">
 
                 <label>出題番号の範囲（例: 1〜20番）</label>
 
@@ -995,6 +1017,8 @@
 
                         label.classList.toggle('checked', e.target.checked);
 
+                        refreshCategoryFilters(true);
+
                     };
 
 
@@ -1019,6 +1043,14 @@
 
             renderGroup('その他・追加科目', otherList, 'other');
 
+            document.getElementById('filter-year').onchange = () => refreshCategoryFilters(true);
+
+            document.getElementById('filter-bigcat').onchange = () => refreshCategoryFilters(true);
+
+            document.getElementById('filter-midcat').onchange = () => updateCatCount();
+
+            refreshCategoryFilters(false);
+
         }
 
 
@@ -1032,6 +1064,8 @@
                 cb.parentElement.classList.toggle('checked', checked);
 
             });
+
+            refreshCategoryFilters(true);
 
         }
 
@@ -1055,6 +1089,106 @@
 
             });
 
+            refreshCategoryFilters(true);
+
+        }
+
+
+
+        function currentBasePool() {
+
+            const year = document.getElementById('filter-year').value;
+
+            const selectedSubjects = Array.from(document.querySelectorAll('.subject-checkbox:checked')).map(cb => cb.value);
+
+            return masterData.filter(q => {
+
+                const qYear = getValue(q, ['試験の回数', '開催回', '回']);
+
+                const qSubject = getValue(q, ['教科', '分野', '科目']);
+
+                const matchYear = (year === 'all' || qYear === year);
+
+                const matchSubject = selectedSubjects.some(s => qSubject.includes(s) || s.includes(qSubject));
+
+                return matchYear && matchSubject;
+
+            });
+
+        }
+
+
+
+        function catSortKey(v) {
+
+            const m = String(v).match(/^\s*(\d+)/);
+
+            return m ? parseInt(m[1]) : 999;
+
+        }
+
+
+
+        function refreshCategoryFilters(keepMid) {
+
+            const bigSel = document.getElementById('filter-bigcat');
+
+            const midSel = document.getElementById('filter-midcat');
+
+            if (!bigSel || !midSel) return;
+
+            const pool = currentBasePool();
+
+            const prevBig = bigSel.value;
+
+            const prevMid = midSel.value;
+
+            const bigCounts = {};
+
+            pool.forEach(q => { const b = getValue(q, ['大項目']); if (b) bigCounts[b] = (bigCounts[b] || 0) + 1; });
+
+            const bigs = Object.keys(bigCounts).sort((a, b) => catSortKey(a) - catSortKey(b) || a.localeCompare(b, 'ja'));
+
+            bigSel.innerHTML = '<option value="all">すべての大項目</option>' + bigs.map(b => `<option value="${b}">${b}（${bigCounts[b]}問）</option>`).join('');
+
+            bigSel.value = bigs.includes(prevBig) ? prevBig : 'all';
+
+            const pool2 = bigSel.value === 'all' ? pool : pool.filter(q => getValue(q, ['大項目']) === bigSel.value);
+
+            const midCounts = {};
+
+            pool2.forEach(q => { const mm = getValue(q, ['中項目']); if (mm) midCounts[mm] = (midCounts[mm] || 0) + 1; });
+
+            const mids = Object.keys(midCounts).sort((a, b) => a.localeCompare(b, 'ja'));
+
+            midSel.innerHTML = '<option value="all">すべての中項目</option>' + mids.map(mm => `<option value="${mm}">${mm}（${midCounts[mm]}問）</option>`).join('');
+
+            midSel.value = (keepMid && mids.includes(prevMid)) ? prevMid : 'all';
+
+            updateCatCount();
+
+        }
+
+
+
+        function updateCatCount() {
+
+            const el = document.getElementById('cat-count');
+
+            if (!el) return;
+
+            const big = document.getElementById('filter-bigcat').value;
+
+            const mid = document.getElementById('filter-midcat').value;
+
+            let pool = currentBasePool();
+
+            if (big !== 'all') pool = pool.filter(q => getValue(q, ['大項目']) === big);
+
+            if (mid !== 'all') pool = pool.filter(q => getValue(q, ['中項目']) === mid);
+
+            el.textContent = (big === 'all' && mid === 'all') ? '' : `この分野の問題は ${pool.length} 問あります`;
+
         }
 
 
@@ -1076,6 +1210,10 @@
             
 
             const selectedSubjects = Array.from(document.querySelectorAll('.subject-checkbox:checked')).map(cb => cb.value);
+
+            const bigCat = document.getElementById('filter-bigcat').value;
+
+            const midCat = document.getElementById('filter-midcat').value;
 
 
 
@@ -1115,7 +1253,13 @@
 
 
 
-                return matchYear && matchSubject && matchRange;
+                const matchBig = (bigCat === 'all' || getValue(q, ['大項目']) === bigCat);
+
+                const matchMid = (midCat === 'all' || getValue(q, ['中項目']) === midCat);
+
+
+
+                return matchYear && matchSubject && matchRange && matchBig && matchMid;
 
             });
 
