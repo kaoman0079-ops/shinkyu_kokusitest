@@ -1287,7 +1287,7 @@
 
             const rawAnswer = getValue(q, ['答え', '正解', '解答']);
 
-            const correct = parseInt(rawAnswer.replace(/[^0-9]/g, ''));
+            const correctNums = (String(rawAnswer).match(/\d+/g) || []).map(Number);
 
             
 
@@ -1297,7 +1297,7 @@
 
 
 
-            if(selected === correct) {
+            if(correctNums.includes(selected)) {
 
                 btn.classList.add('correct');
 
@@ -1309,7 +1309,7 @@
 
                 btn.classList.add('wrong');
 
-                if(btns[correct-1]) btns[correct-1].classList.add('correct');
+                correctNums.forEach(cn => { if(btns[cn-1]) btns[cn-1].classList.add('correct'); });
 
                 q.userCorrect = false;
 
@@ -1349,7 +1349,7 @@
 
 
 
-            recordAnswer(q, selected === correct);
+            recordAnswer(q, correctNums.includes(selected));
 
             document.getElementById('next-btn').style.display = 'block';
 
@@ -1436,14 +1436,14 @@
                     det.appendChild(sum);
                     const body = document.createElement('div');
                     body.className = 'review-detail-body';
-                    const correctNum = parseInt((getValue(q, ['答え', '正解', '解答']) || '').replace(/[^0-9]/g, ''));
+                    const correctNums = ((getValue(q, ['答え', '正解', '解答']) || '').match(/\d+/g) || []).map(Number);
                     let optsHtml = '';
                     for (let k = 1; k <= 4; k++) {
                         const ot = cleanOptionText(getValue(q, [`選択肢${k}`, `選択肢 ${k}`, `肢${k}`]) || '');
                         let mark = '';
                         let cls = '';
-                        if (k === correctNum) { mark = ' ◯正解'; cls = ' is-correct'; }
-                        if (q.userSelected === k && k !== correctNum) { mark = ' ✖あなたの回答'; cls = ' is-wrong'; }
+                        if (correctNums.includes(k)) { mark = ' ◯正解'; cls = ' is-correct'; }
+                        if (q.userSelected === k && !correctNums.includes(k)) { mark = ' ✖あなたの回答'; cls = ' is-wrong'; }
                         optsHtml += `<div class="review-opt${cls}">${k}. ${formatText(ot)}${mark}</div>`;
                     }
                     const expVal2 = getValue(q, ['解説', '問題解説']);
