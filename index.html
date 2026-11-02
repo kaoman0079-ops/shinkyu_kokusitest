@@ -381,6 +381,30 @@
         .btn-weak:disabled { background: #d6c9a8; cursor: not-allowed; }
         .study-note { font-size: 0.78rem; color: #64748b; margin-top: 8px; line-height: 1.5; }
 
+        .exam-panel { margin: 18px 0 6px; padding: 16px 14px; background: #eef2fa; border: 1px solid #c7d3ec; border-radius: 12px; }
+        .exam-panel h3 { font-size: 1rem; color: var(--primary-hover); margin-bottom: 10px; }
+        .exam-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .exam-row select { flex: 1; min-width: 140px; }
+        .btn-exam { background: linear-gradient(135deg, #3a5a94, var(--primary) 55%, var(--primary-hover)); color: #fff; border: none; padding: 12px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.95rem; width: 100%; }
+        .exam-note { font-size: 0.78rem; color: #475569; margin-top: 8px; line-height: 1.5; }
+        #exam-timer { font-weight: 900; color: var(--primary-hover); font-size: 0.95rem; }
+        #exam-timer.time-low { color: var(--error); }
+        .option-btn.selected { border-color: var(--primary); background: var(--primary-light); box-shadow: inset 0 0 0 1px var(--primary); }
+        .option-btn.selected .option-num { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .quiz-nav { display: flex; gap: 8px; margin-top: 16px; }
+        .btn-prev { flex: 1; background: #fff; border: 1.5px solid var(--border); color: #5b6068; padding: 14px; border-radius: 14px; cursor: pointer; font-size: 0.95rem; font-family: inherit; font-weight: 700; }
+        .btn-prev:disabled { opacity: 0.4; cursor: not-allowed; }
+        #exam-next-btn { flex: 2; margin-top: 0; }
+        .weak-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .weak-table td, .weak-table th { padding: 7px 6px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+        .weak-bar-bg { background: #e9e4d3; border-radius: 6px; height: 8px; min-width: 70px; overflow: hidden; }
+        .weak-bar { height: 100%; border-radius: 6px; }
+        .btn-drill { background: var(--primary); color: #fff; border: none; padding: 6px 10px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.78rem; white-space: nowrap; }
+        .exam-summary { margin: 16px 0; padding: 16px; border-radius: 14px; border: 1.5px solid var(--border); background: #fbf8f0; }
+        .exam-verdict { font-size: 1.25rem; font-weight: 900; text-align: center; margin-bottom: 6px; }
+        .verdict-pass { color: var(--success); }
+        .verdict-fail { color: var(--error); }
+
     </style>
 
 </head>
@@ -536,6 +560,29 @@
             <p class="study-note">間違えた問題は自動で「苦手リスト」に貯まります。苦手モードで正解するとリストから外れます。記録はこの端末内に保存されます。</p>
         </div>
 
+        <div class="exam-panel">
+            <h3>📝 模試モード（本番形式）</h3>
+            <div class="exam-row">
+                <select id="exam-year"></select>
+                <select id="exam-type">
+                    <option value="both">はり師＋きゅう師（全問）</option>
+                    <option value="hari">はり師のみ</option>
+                    <option value="kyu">きゅう師のみ</option>
+                </select>
+            </div>
+            <button type="button" class="btn-exam" onclick="startExam()">模試を開始する</button>
+            <p class="exam-note">本番と同じ午前・午後の2部構成。制限時間つき（両方受験：各2時間10分／片方のみ：午後は2時間）で、途中は解説なし、最後に一括採点と科目別成績・合格ライン（60%）判定が出ます。</p>
+        </div>
+
+        <div class="study-panel" id="weak-panel" style="display:none;">
+            <div class="study-stats">🎯 弱点分析（回答するたびに貯まります）</div>
+            <div id="weak-subjects"></div>
+            <div id="weak-mids" style="margin-top:10px;"></div>
+            <div class="study-actions" style="margin-top:10px;">
+                <button type="button" class="btn-quick" onclick="clearCatStats()">弱点分析の記録をリセット</button>
+            </div>
+        </div>
+
         <button id="start-btn" class="btn-primary" onclick="startQuiz()" disabled>同期をお待ちください</button>
 
     </div>
@@ -551,6 +598,8 @@
             <div class="quiz-info-row">
 
                 <span id="quiz-progress-text">1/10問</span>
+
+                <span id="exam-timer" style="display:none;"></span>
 
                 <span id="quiz-exam-info"></span>
 
@@ -592,6 +641,33 @@
 
         <button id="next-btn" class="btn-next" onclick="nextQuestion()">次の問題へ進む ➔</button>
 
+        <div class="quiz-nav" id="exam-nav" style="display:none;">
+            <button type="button" class="btn-prev" id="prev-btn" onclick="prevQuestion()">⬅ 前の問題</button>
+            <button type="button" class="btn-next" id="exam-next-btn" onclick="nextQuestion()">次の問題へ ➔</button>
+        </div>
+
+    </div>
+
+
+
+    <!-- 模試 休憩画面（午前終了） -->
+
+    <div id="break-area" class="card screen-section">
+
+        <div class="result-header">
+
+            <h2>午前の部 終了</h2>
+
+            <p style="margin-top:14px; line-height:1.8;">お疲れさまでした。本番と同じく、ここで休憩をはさんでから午後の部に進みます。<br>（午前・午後の合計で最後に採点します）</p>
+
+            <p id="break-info" style="margin-top:10px; font-weight:700; color:#475569;"></p>
+
+        </div>
+
+        <button class="btn-primary" onclick="startExamSecondHalf()">午後の部を開始する ➔</button>
+
+        <button class="btn-prev" style="width:100%; margin-top:10px;" onclick="finishExamEarly()">ここで模試を終了して採点する</button>
+
     </div>
 
 
@@ -599,6 +675,8 @@
     <!-- 結果画面 -->
 
     <div id="result-area" class="card screen-section">
+
+        <div id="exam-summary" class="exam-summary" style="display:none;"></div>
 
         <div class="result-header">
 
@@ -648,6 +726,16 @@
 
         const LS_WRONG = 'sk_wrong_ids';
         const LS_STATS = 'sk_stats';
+        const LS_CATSTATS = 'sk_catstats';
+
+        let examMode = false;
+        let examPhase = 0;
+        let examYearLabel = '';
+        let examType = 'both';
+        let examFirstSet = [];
+        let examSecondSet = [];
+        let examTimerId = null;
+        let examDeadline = 0;
 
         function loadWrong() {
             try { return JSON.parse(localStorage.getItem(LS_WRONG)) || []; } catch(e) { return []; }
@@ -668,6 +756,85 @@
             st.answered = (st.answered || 0) + 1;
             st.correct = (st.correct || 0) + (isCorrect ? 1 : 0);
             try { localStorage.setItem(LS_STATS, JSON.stringify(st)); } catch(e) {}
+            let cs = {};
+            try { cs = JSON.parse(localStorage.getItem(LS_CATSTATS)) || {}; } catch(e) {}
+            const bump = (obj, key) => { if (!key) return; if (!obj[key]) obj[key] = { a: 0, c: 0 }; obj[key].a++; if (isCorrect) obj[key].c++; };
+            cs.subject = cs.subject || {}; cs.mid = cs.mid || {};
+            bump(cs.subject, getValue(q, ['教科', '分野', '科目']));
+            const big = getValue(q, ['大項目']); const mid = getValue(q, ['中項目']);
+            bump(cs.mid, (big && mid) ? (big + ' ＞ ' + mid) : (mid || big));
+            try { localStorage.setItem(LS_CATSTATS, JSON.stringify(cs)); } catch(e) {}
+        }
+
+        function loadCatStats() {
+            try { return JSON.parse(localStorage.getItem(LS_CATSTATS)) || {}; } catch(e) { return {}; }
+        }
+
+        function clearCatStats() {
+            if (confirm('弱点分析の記録（科目別・分野別の正答率）をすべて消しますか？')) {
+                try { localStorage.removeItem(LS_CATSTATS); } catch(e) {}
+                updateStudyPanel();
+            }
+        }
+
+        function renderWeakness() {
+            const panel = document.getElementById('weak-panel');
+            if (!panel) return;
+            const cs = loadCatStats();
+            const subj = cs.subject || {};
+            const rows = Object.keys(subj).filter(k => subj[k].a >= 5)
+                .map(k => ({ k, a: subj[k].a, c: subj[k].c, rate: subj[k].c / subj[k].a }))
+                .sort((x, y) => x.rate - y.rate);
+            if (!rows.length) { panel.style.display = 'none'; return; }
+            panel.style.display = 'block';
+            const barColor = r => r < 0.5 ? '#bf443c' : (r < 0.7 ? '#d9a441' : '#2e7d5b');
+            let html = '<table class="weak-table"><tr><th>科目</th><th>正答率</th><th></th><th></th></tr>';
+            rows.forEach(r => {
+                html += `<tr><td>${r.k}</td><td>${Math.round(r.rate * 100)}%<br><span style="font-size:0.75rem; color:#64748b;">${r.c}/${r.a}問</span></td><td><div class="weak-bar-bg"><div class="weak-bar" style="width:${Math.round(r.rate * 100)}%; background:${barColor(r.rate)};"></div></div></td><td><button type="button" class="btn-drill" onclick="startDrill(${JSON.stringify(r.k)}, null, null)">解く</button></td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('weak-subjects').innerHTML = html;
+            const mid = cs.mid || {};
+            const mrows = Object.keys(mid).filter(k => mid[k].a >= 5)
+                .map(k => ({ k, a: mid[k].a, c: mid[k].c, rate: mid[k].c / mid[k].a }))
+                .sort((x, y) => x.rate - y.rate).slice(0, 5);
+            if (mrows.length) {
+                let mh = '<div style="font-weight:700; font-size:0.85rem; color:#475569; margin-bottom:4px;">分野別ワースト5</div>';
+                mrows.forEach(r => {
+                    const parts = r.k.split(' ＞ ');
+                    const big = parts.length > 1 ? parts[0] : null;
+                    const md = parts.length > 1 ? parts[1] : parts[0];
+                    mh += `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 0; border-bottom:1px dashed var(--border); font-size:0.85rem;"><span>${r.k}（${Math.round(r.rate * 100)}%・${r.c}/${r.a}問）</span><button type="button" class="btn-drill" onclick='startDrill(null, ${JSON.stringify(big)}, ${JSON.stringify(md)})'>解く</button></div>`;
+                });
+                document.getElementById('weak-mids').innerHTML = mh;
+            } else {
+                document.getElementById('weak-mids').innerHTML = '';
+            }
+        }
+
+        function startDrill(subject, big, mid) {
+            document.getElementById('filter-year').value = 'all';
+            if (subject) {
+                document.querySelectorAll('.subject-checkbox').forEach(cb => {
+                    const on = (cb.value === subject);
+                    cb.checked = on;
+                    cb.parentElement.classList.toggle('checked', on);
+                });
+            } else {
+                selectAllSubjects(true);
+            }
+            refreshCategoryFilters(false);
+            if (big) {
+                const bs = document.getElementById('filter-bigcat');
+                if ([...bs.options].some(o => o.value === big)) { bs.value = big; refreshCategoryFilters(false); }
+            }
+            if (mid) {
+                const ms = document.getElementById('filter-midcat');
+                if ([...ms.options].some(o => o.value === mid)) { ms.value = mid; updateCatCount(); }
+            }
+            document.getElementById('quiz-count').value = '20';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            startQuiz();
         }
 
         function updateStudyPanel() {
@@ -678,6 +845,7 @@
             if (wb) wb.disabled = (wrong.length === 0);
             let st = {};
             try { st = JSON.parse(localStorage.getItem(LS_STATS)) || {}; } catch(e) {}
+            renderWeakness();
             const sEl = document.getElementById('study-stats');
             if (sEl) {
                 if (st.answered) {
@@ -800,6 +968,8 @@
                 }
 
                 
+
+                populateExamYears();
 
                 document.getElementById('start-btn').disabled = false;
 
@@ -1193,6 +1363,147 @@
 
 
 
+        function examQuestionNum(q) {
+            const s = getValue(q, ['試験の番号', '問題番号', '番号']) || '0';
+            return parseInt(String(s).replace(/[^0-9]/g, '')) || 0;
+        }
+
+        function populateExamYears() {
+            const sel = document.getElementById('exam-year');
+            if (!sel) return;
+            const counts = {};
+            masterData.forEach(q => {
+                const y = getValue(q, ['試験の回数', '開催回', '回']);
+                if (y) counts[y] = (counts[y] || 0) + 1;
+            });
+            const years = Object.keys(counts).filter(y => counts[y] >= 150).sort().reverse();
+            sel.innerHTML = years.map(y => `<option value="${y}">${y}（全${counts[y]}問）</option>`).join('');
+        }
+
+        function startExam() {
+            const year = document.getElementById('exam-year').value;
+            if (!year) { alert('模試に使える回がまだ読み込めていません。'); return; }
+            examType = document.getElementById('exam-type').value;
+            const pool = masterData.filter(q => getValue(q, ['試験の回数', '開催回', '回']) === year
+                && !['992', '964'].includes(getValue(q, ['全体通し番号', '通し番号'])));
+            const maxNum = Math.max(...pool.map(examQuestionNum));
+            const half = maxNum / 2;
+            let am = pool.filter(q => examQuestionNum(q) <= half);
+            let pm = pool.filter(q => examQuestionNum(q) > half);
+            if (examType === 'hari') pm = pm.filter(q => getValue(q, ['教科', '分野', '科目']) !== 'きゅう理論');
+            if (examType === 'kyu') pm = pm.filter(q => getValue(q, ['教科', '分野', '科目']) !== 'はり理論');
+            const byNum = (a, b) => examQuestionNum(a) - examQuestionNum(b);
+            am.sort(byNum); pm.sort(byNum);
+            if (!am.length || !pm.length) { alert('この回の問題がそろっていません。'); return; }
+            examFirstSet = am; examSecondSet = pm;
+            examYearLabel = year;
+            examMode = true; weakMode = false; examPhase = 1;
+            quizSet = examFirstSet;
+            currentIndex = 0;
+            document.getElementById('setup-area').classList.remove('active');
+            document.getElementById('quiz-area').classList.add('active');
+            startExamTimer(130);
+            showQuestion();
+        }
+
+        function startExamTimer(minutes) {
+            stopExamTimer();
+            examDeadline = Date.now() + minutes * 60 * 1000;
+            const el = document.getElementById('exam-timer');
+            el.style.display = 'inline';
+            updateExamTimer();
+            examTimerId = setInterval(updateExamTimer, 1000);
+        }
+
+        function stopExamTimer() {
+            if (examTimerId) { clearInterval(examTimerId); examTimerId = null; }
+            const el = document.getElementById('exam-timer');
+            if (el) el.style.display = 'none';
+        }
+
+        function updateExamTimer() {
+            const el = document.getElementById('exam-timer');
+            if (!el) return;
+            let remain = Math.max(0, Math.floor((examDeadline - Date.now()) / 1000));
+            const mm = Math.floor(remain / 60);
+            const ss = remain % 60;
+            el.textContent = `⏱ 残り ${mm}:${String(ss).padStart(2, '0')}`;
+            el.classList.toggle('time-low', remain <= 300);
+            if (remain <= 0) {
+                stopExamTimer();
+                alert('時間になりました。');
+                if (examPhase === 1) {
+                    currentIndex = quizSet.length - 1;
+                    nextQuestion();
+                } else {
+                    gradeExam();
+                }
+            }
+        }
+
+        function startExamSecondHalf() {
+            examPhase = 2;
+            quizSet = examSecondSet;
+            currentIndex = 0;
+            document.getElementById('break-area').classList.remove('active');
+            document.getElementById('quiz-area').classList.add('active');
+            startExamTimer(examType === 'both' ? 130 : 120);
+            showQuestion();
+        }
+
+        function finishExamEarly() {
+            gradeExam();
+        }
+
+        function gradeExam() {
+            stopExamTimer();
+            const all = examFirstSet.concat(examSecondSet);
+            let correctCount = 0;
+            const perSubject = {};
+            all.forEach(q => {
+                const correctNums = (String(getValue(q, ['答え', '正解', '解答'])).match(/\d+/g) || []).map(Number);
+                const ok = !!q.userSelected && correctNums.includes(q.userSelected);
+                q.userCorrect = ok;
+                if (ok) correctCount++;
+                const s = getValue(q, ['教科', '分野', '科目']);
+                if (!perSubject[s]) perSubject[s] = { a: 0, c: 0 };
+                perSubject[s].a++; if (ok) perSubject[s].c++;
+                recordAnswer(q, ok);
+            });
+            score = correctCount;
+            quizSet = all;
+            examMode = false;
+            document.getElementById('break-area').classList.remove('active');
+            document.getElementById('quiz-area').classList.remove('active');
+            const total = all.length;
+            const rate = total ? correctCount / total : 0;
+            const passLine = Math.ceil(total * 0.6);
+            const passed = correctCount >= passLine;
+            const sum = document.getElementById('exam-summary');
+            const typeLabel = examType === 'hari' ? 'はり師のみ' : (examType === 'kyu' ? 'きゅう師のみ' : 'はり師＋きゅう師');
+            let rows = Object.keys(perSubject).map(s => {
+                const p = perSubject[s];
+                const r = Math.round(p.c / p.a * 100);
+                const col = r < 50 ? '#bf443c' : (r < 70 ? '#b45309' : '#2e7d5b');
+                return `<tr><td>${s}</td><td>${p.c}/${p.a}問</td><td style="color:${col}; font-weight:700;">${r}%</td></tr>`;
+            }).join('');
+            sum.innerHTML = `<div class="exam-verdict ${passed ? 'verdict-pass' : 'verdict-fail'}">${passed ? '🎉 合格ライン到達！' : '📈 合格ラインまであと ' + (passLine - correctCount) + '問'}</div>`
+                + `<p style="text-align:center; color:#475569; font-weight:700;">${examYearLabel} 模試（${typeLabel}）／ 合格ライン ${passLine}問（60%）</p>`
+                + `<table class="weak-table" style="margin-top:10px;"><tr><th>科目</th><th>正解</th><th>正答率</th></tr>${rows}</table>`
+                + `<p class="exam-note">間違えた問題は苦手リストと弱点分析に記録しました。下のリストで1問ずつ復習できます。</p>`;
+            sum.style.display = 'block';
+            showResults();
+            updateStudyPanel();
+            window.scrollTo({ top: 0 });
+        }
+
+        function selectExamOption(num, btn) {
+            const q = quizSet[currentIndex];
+            q.userSelected = num;
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
         function startQuiz() {
 
             weakMode = false;
@@ -1407,7 +1718,7 @@
 
                 `;
 
-                btn.onclick = () => checkAnswer(i, btn);
+                btn.onclick = examMode ? (() => selectExamOption(i, btn)) : (() => checkAnswer(i, btn));
 
                 container.appendChild(btn);
 
@@ -1415,9 +1726,26 @@
 
 
 
+            if (examMode && q.userSelected) {
+                const allBtns = document.querySelectorAll('.option-btn');
+                if (allBtns[q.userSelected - 1]) allBtns[q.userSelected - 1].classList.add('selected');
+            }
+
             document.getElementById('explanation-box').style.display = 'none';
 
-            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('next-btn').style.display = examMode ? 'none' : 'none';
+
+            const nav = document.getElementById('exam-nav');
+            if (nav) {
+                nav.style.display = examMode ? 'flex' : 'none';
+                if (examMode) {
+                    document.getElementById('prev-btn').disabled = (currentIndex === 0);
+                    const last = (currentIndex === quizSet.length - 1);
+                    document.getElementById('exam-next-btn').textContent = last
+                        ? (examPhase === 1 ? '午前の部を終了する ➔' : '採点する（模試終了）')
+                        : '次の問題へ ➔';
+                }
+            }
 
         }
 
@@ -1503,6 +1831,23 @@
 
         function nextQuestion() {
 
+            if (examMode) {
+                if (currentIndex < quizSet.length - 1) {
+                    currentIndex++;
+                    showQuestion();
+                } else if (examPhase === 1) {
+                    stopExamTimer();
+                    document.getElementById('quiz-area').classList.remove('active');
+                    document.getElementById('break-area').classList.add('active');
+                    const answered = examFirstSet.filter(q => q.userSelected).length;
+                    document.getElementById('break-info').innerText = `午前の部：${examFirstSet.length}問中 ${answered}問に回答しました`;
+                    window.scrollTo({ top: 0 });
+                } else {
+                    gradeExam();
+                }
+                return;
+            }
+
             currentIndex++;
 
             if(currentIndex < quizSet.length) {
@@ -1510,6 +1855,24 @@
                 showQuestion();
 
             } else {
+
+                showResults();
+
+            }
+
+        }
+
+
+
+        function prevQuestion() {
+
+            if (currentIndex > 0) { currentIndex--; showQuestion(); }
+
+        }
+
+
+
+        function showResults() {
 
                 document.getElementById('quiz-area').classList.remove('active');
 
@@ -1600,8 +1963,7 @@
 
                 });
 
-            }
-
+            
         }
 
     </script>
