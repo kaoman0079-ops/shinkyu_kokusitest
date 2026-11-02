@@ -782,7 +782,7 @@
             if (!panel) return;
             const cs = loadCatStats();
             const subj = cs.subject || {};
-            const rows = Object.keys(subj).filter(k => subj[k].a >= 5)
+            const rows = Object.keys(subj).filter(k => subj[k].a >= 3)
                 .map(k => ({ k, a: subj[k].a, c: subj[k].c, rate: subj[k].c / subj[k].a }))
                 .sort((x, y) => x.rate - y.rate);
             if (!rows.length) { panel.style.display = 'none'; return; }
@@ -795,7 +795,7 @@
             html += '</table>';
             document.getElementById('weak-subjects').innerHTML = html;
             const mid = cs.mid || {};
-            const mrows = Object.keys(mid).filter(k => mid[k].a >= 5)
+            const mrows = Object.keys(mid).filter(k => mid[k].a >= 3)
                 .map(k => ({ k, a: mid[k].a, c: mid[k].c, rate: mid[k].c / mid[k].a }))
                 .sort((x, y) => x.rate - y.rate).slice(0, 5);
             if (mrows.length) {
@@ -1739,6 +1739,7 @@
             if (nav) {
                 nav.style.display = examMode ? 'flex' : 'none';
                 if (examMode) {
+                    document.getElementById('exam-next-btn').style.display = 'block';
                     document.getElementById('prev-btn').disabled = (currentIndex === 0);
                     const last = (currentIndex === quizSet.length - 1);
                     document.getElementById('exam-next-btn').textContent = last
