@@ -584,6 +584,18 @@
             </div>
         </div>
 
+        <div class="study-panel" id="summary-panel">
+            <div class="study-stats">📖 分野別まとめ（テーマごとの参考書）</div>
+            <div class="exam-row">
+                <select id="sum-subject" onchange="sumSubjectChanged()"></select>
+                <select id="sum-big" onchange="sumBigChanged()"></select>
+            </div>
+            <div class="exam-row" style="margin-top:8px;">
+                <select id="sum-mid" onchange="sumMidChanged()"></select>
+            </div>
+            <div id="sum-card" style="margin-top:10px;"></div>
+        </div>
+
         <button id="start-btn" class="btn-primary" onclick="startQuiz()" disabled>同期をお待ちください</button>
 
     </div>
@@ -805,12 +817,98 @@
                     const parts = r.k.split(' ＞ ');
                     const big = parts.length > 1 ? parts[0] : null;
                     const md = parts.length > 1 ? parts[1] : parts[0];
-                    mh += `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 0; border-bottom:1px dashed var(--border); font-size:0.85rem;"><span>${r.k}（${Math.round(r.rate * 100)}%・${r.c}/${r.a}問）</span><button type="button" class="btn-drill" onclick='startDrill(null, ${JSON.stringify(big)}, ${JSON.stringify(md)})'>解く</button></div>`;
+                    const hit = summaryFieldIndex[r.k];
+                    const sumBtn = hit ? `<button type="button" class="btn-drill" onclick='openSummary(${JSON.stringify(hit.subj)}, ${JSON.stringify(hit.big)}, ${JSON.stringify(hit.mid)})'>📖 まとめ</button>` : '';
+                    mh += `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 0; border-bottom:1px dashed var(--border); font-size:0.85rem;"><span>${r.k}（${Math.round(r.rate * 100)}%・${r.c}/${r.a}問）</span><span style="display:flex; gap:6px;">${sumBtn}<button type="button" class="btn-drill" onclick='startDrill(null, ${JSON.stringify(big)}, ${JSON.stringify(md)})'>解く</button></span></div>`;
                 });
                 document.getElementById('weak-mids').innerHTML = mh;
             } else {
                 document.getElementById('weak-mids').innerHTML = '';
             }
+        }
+
+        let summariesData = null;
+        const summaryFieldIndex = {};
+        async function loadSummaries() {
+            try {
+                const res = await fetch('summaries.json?v=' + Date.now());
+                summariesData = await res.json();
+                Object.keys(summariesData).forEach(s => {
+                    Object.keys(summariesData[s]).forEach(k => {
+                        const idx = k.indexOf(' > ');
+                        if (idx < 0) return;
+                        const big = k.slice(0, idx), mid = k.slice(idx + 3);
+                        summaryFieldIndex[big + ' ＞ ' + mid] = { subj: s, big, mid };
+                    });
+                });
+                initSummaryViewer();
+                renderWeakness();
+            } catch (e) {
+                const p = document.getElementById('summary-panel');
+                if (p) p.style.display = 'none';
+            }
+        }
+        function getSummary(subj, big, mid) {
+            if (!summariesData || !subj || !big || !mid) return null;
+            const s = summariesData[subj];
+            return s ? (s[big + ' > ' + mid] || null) : null;
+        }
+        function sumFmt(t) {
+            return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        }
+        function summaryCardHTML(subj, big, mid) {
+            const s = getSummary(subj, big, mid);
+            if (!s) return '';
+            const li = arr => (arr || []).map(x => `<li>${sumFmt(x)}</li>`).join('');
+            let h = `<div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:12px 14px; text-align:left;">
+                <div style="font-weight:700; color:#92400e; font-size:0.85rem;">${subj} ＞ ${big} ＞ ${mid}</div>
+                <p style="margin:8px 0; font-weight:600; line-height:1.7;">${sumFmt(s.hitokoto)}</p>
+                <div style="font-weight:700; font-size:0.85rem; color:#475569;">要点</div>
+                <ul style="margin:4px 0 8px; padding-left:18px; line-height:1.7;">${li(s.yoten)}</ul>`;
+            if (s.hikkake && s.hikkake.length) {
+                h += `<div style="font-weight:700; font-size:0.85rem; color:#b91c1c;">引っかけ</div>
+                <ul style="margin:4px 0 0; padding-left:18px; line-height:1.7;">${li(s.hikkake)}</ul>`;
+            }
+            if (subj === '経絡経穴概論') {
+                h += `<p style="margin-top:8px; font-size:0.85rem;">経穴ごとの部位・解剖は <a href="https://kaoman0079-ops.github.io/keiraku-master/" target="_blank" rel="noopener">経穴辞典（keiraku-master）</a> で確認できます。</p>`;
+            }
+            h += `<div style="margin-top:10px;"><button type="button" class="btn-drill" onclick='startDrill(${JSON.stringify(subj)}, ${JSON.stringify(big)}, ${JSON.stringify(mid)})'>この分野を解く</button></div></div>`;
+            return h;
+        }
+        function initSummaryViewer() {
+            const ss = document.getElementById('sum-subject');
+            if (!ss || !summariesData) return;
+            ss.innerHTML = Object.keys(summariesData).map(s => `<option value="${s}">${s}</option>`).join('');
+            sumSubjectChanged();
+        }
+        function sumSubjectChanged() {
+            const subj = document.getElementById('sum-subject').value;
+            const bigs = [...new Set(Object.keys(summariesData[subj] || {}).map(k => k.slice(0, k.indexOf(' > '))))];
+            document.getElementById('sum-big').innerHTML = bigs.map(b => `<option value="${b}">${b}</option>`).join('');
+            sumBigChanged();
+        }
+        function sumBigChanged() {
+            const subj = document.getElementById('sum-subject').value;
+            const big = document.getElementById('sum-big').value;
+            const mids = Object.keys(summariesData[subj] || {}).filter(k => k.slice(0, k.indexOf(' > ')) === big).map(k => k.slice(k.indexOf(' > ') + 3));
+            document.getElementById('sum-mid').innerHTML = mids.map(m => `<option value="${m}">${m}</option>`).join('');
+            sumMidChanged();
+        }
+        function sumMidChanged() {
+            const subj = document.getElementById('sum-subject').value;
+            const big = document.getElementById('sum-big').value;
+            const mid = document.getElementById('sum-mid').value;
+            document.getElementById('sum-card').innerHTML = summaryCardHTML(subj, big, mid);
+        }
+        function openSummary(subj, big, mid) {
+            if (!summariesData || !summariesData[subj]) return;
+            const ss = document.getElementById('sum-subject');
+            ss.value = subj; sumSubjectChanged();
+            const bs = document.getElementById('sum-big');
+            if ([...bs.options].some(o => o.value === big)) { bs.value = big; sumBigChanged(); }
+            const ms = document.getElementById('sum-mid');
+            if ([...ms.options].some(o => o.value === mid)) { ms.value = mid; sumMidChanged(); }
+            document.getElementById('summary-panel').scrollIntoView({ behavior: 'smooth' });
         }
 
         function startDrill(subject, big, mid) {
@@ -971,6 +1069,8 @@
                 
 
                 populateExamYears();
+
+                loadSummaries();
 
                 document.getElementById('start-btn').disabled = false;
 
@@ -1821,7 +1921,14 @@
 
             expText.innerHTML = explanationHTML;
 
-
+            const sumSubj = getValue(q, ['教科', '分野', '科目']);
+            const sumBig = getValue(q, ['大項目']); const sumMid = getValue(q, ['中項目']);
+            if (getSummary(sumSubj, sumBig, sumMid)) {
+                const div = document.createElement('div');
+                div.style.marginTop = '10px';
+                div.innerHTML = `<button type="button" class="btn-drill" onclick="const d=this.nextElementSibling; d.style.display = d.style.display === 'none' ? 'block' : 'none';">📖 この分野のまとめ</button><div style="display:none; margin-top:8px;">${summaryCardHTML(sumSubj, sumBig, sumMid)}</div>`;
+                expText.appendChild(div);
+            }
 
             recordAnswer(q, correctNums.includes(selected));
 
