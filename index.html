@@ -496,7 +496,7 @@
 
 <div class="form-control">
 
-                <label>出題番号の範囲（例: 1〜20番）</label>
+                <label>出題番号の範囲（その回の問題番号、例: 1〜20番）</label>
 
                 <div class="range-inputs">
 
@@ -551,6 +551,8 @@
         </div>
 
 
+
+        <p id="match-count" style="margin:6px 0 10px; font-weight:700;"></p>
 
         <button id="start-btn" class="btn-primary" onclick="startQuiz()" disabled>同期をお待ちください</button>
 
@@ -1113,6 +1115,8 @@
 
                 updateStudyPanel();
 
+                updateMatchCount();
+
             } catch (e) {
 
                 updateFilters([]);
@@ -1355,6 +1359,10 @@
 
             document.getElementById('filter-midcat').onchange = () => updateCatCount();
 
+            document.getElementById('num-start').addEventListener('input', updateMatchCount);
+
+            document.getElementById('num-end').addEventListener('input', updateMatchCount);
+
             refreshCategoryFilters(false);
 
         }
@@ -1473,6 +1481,8 @@
 
             updateCatCount();
 
+            updateMatchCount();
+
         }
 
 
@@ -1494,6 +1504,70 @@
             if (mid !== 'all') pool = pool.filter(q => getValue(q, ['中項目']) === mid);
 
             el.textContent = (big === 'all' && mid === 'all') ? '' : `この分野の問題は ${pool.length} 問あります`;
+
+        }
+
+
+
+        function currentMatchCount() {
+
+            const yearEl = document.getElementById('filter-year');
+
+            if (!yearEl || !masterData.length) return 0;
+
+            const year = yearEl.value;
+
+            const startNum = parseInt(document.getElementById('num-start').value) || null;
+
+            const endNum = parseInt(document.getElementById('num-end').value) || null;
+
+            const bigCat = document.getElementById('filter-bigcat').value;
+
+            const midCat = document.getElementById('filter-midcat').value;
+
+            const selectedSubjects = Array.from(document.querySelectorAll('.subject-checkbox:checked')).map(cb => cb.value);
+
+            if (selectedSubjects.length === 0) return 0;
+
+            return masterData.filter(q => {
+
+                const qYear = getValue(q, ['試験の回数', '開催回', '回']);
+
+                const qSubject = getValue(q, ['教科', '分野', '科目']);
+
+                if (!(year === 'all' || qYear === year)) return false;
+
+                if (!selectedSubjects.some(s => qSubject.includes(s) || s.includes(qSubject))) return false;
+
+                const qNum = examQuestionNum(q);
+
+                if (startNum !== null && qNum < startNum) return false;
+
+                if (endNum !== null && qNum > endNum) return false;
+
+                if (bigCat !== 'all' && getValue(q, ['大項目']) !== bigCat) return false;
+
+                if (midCat !== 'all' && getValue(q, ['中項目']) !== midCat) return false;
+
+                return true;
+
+            }).length;
+
+        }
+
+
+
+        function updateMatchCount() {
+
+            const el = document.getElementById('match-count');
+
+            if (!el || !masterData.length) return;
+
+            const n = currentMatchCount();
+
+            el.textContent = n > 0 ? `現在の条件にあう問題：${n}問` : '⚠ 現在の条件にあう問題が0問です。回・中項目・番号の範囲を広げてみてください';
+
+            el.style.color = n > 0 ? '#2e7d5b' : '#bf443c';
 
         }
 
@@ -1680,9 +1754,7 @@
 
                 const qSubject = getValue(q, ['教科', '分野', '科目']);
 
-                const qNumStr = getValue(q, ['全体通し番号', '通し番号', '教科での番号', '試験の番号', '問題番号', '番号']) || "0";
-
-                const qNum = parseInt(qNumStr.replace(/[^0-9]/g, '')) || 0;
+                const qNum = examQuestionNum(q);
 
 
 
@@ -1714,7 +1786,7 @@
 
             if(quizSet.length === 0) { 
 
-                alert("指定した条件・教科に該当する問題が見つかりませんでした。"); 
+                alert("指定した条件にあう問題が0問でした。回・教科・中項目・番号の範囲の組み合わせを変えてみてください。"); 
 
                 return; 
 
