@@ -2318,12 +2318,12 @@
                 currentUser = user;
                 if (unsub) { unsub(); unsub = null; }
                 if (!user) {
-                    if (loginBtn) loginBtn.style.display = '';
+                    if (loginBtn) { loginBtn.style.display = ''; loginBtn.textContent = 'Googleでログイン'; loginBtn.disabled = false; }
                     if (logoutBtn) logoutBtn.style.display = 'none';
                     setStatus('未ログイン：記録はこの端末だけに保存されています。');
                     return;
                 }
-                if (loginBtn) loginBtn.style.display = 'none';
+                if (loginBtn) { loginBtn.style.display = ''; loginBtn.textContent = '✓ ログイン済み'; loginBtn.disabled = true; }
                 if (logoutBtn) logoutBtn.style.display = '';
                 setStatus(`ログイン中：${user.email || ''}（自動で同期します）`);
 
