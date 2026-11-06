@@ -809,22 +809,14 @@
         }
 
         function startQTimer() {
-            stopQTimer();
+            // 解いている間に時間が見えるとプレッシャーになるため、表示はせず記録だけ行う
             quizStartAt = Date.now();
             qTimes = [];
-            const el = document.getElementById('q-timer');
-            if (el) el.style.display = '';
-            qTimerId = setInterval(() => {
-                const el2 = document.getElementById('q-timer');
-                if (!el2) return;
-                const qSec = qStartAt ? (Date.now() - qStartAt) / 1000 : 0;
-                const totSec = (Date.now() - quizStartAt) / 1000;
-                el2.textContent = `⏱ この問題 ${fmtElapsed(qSec)}（合計 ${fmtElapsed(totSec)}）`;
-            }, 500);
+            qTimerId = 1;
         }
 
         function stopQTimer() {
-            if (qTimerId) { clearInterval(qTimerId); qTimerId = null; }
+            qTimerId = null;
             const el = document.getElementById('q-timer');
             if (el) el.style.display = 'none';
         }
