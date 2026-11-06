@@ -573,6 +573,10 @@
                 <button type="button" class="btn-quick" id="sync-logout-btn" onclick="cloudLogout()" style="display:none;">ログアウト</button>
             </div>
             <p class="study-note">ログインすると、苦手リストと学習記録・弱点分析が自動でクラウドに保存され、別の端末でも同じ記録で勉強できます。</p>
+            <div class="study-actions" style="margin-top:8px;">
+                <button type="button" class="btn-quick" id="ai-summary-btn" onclick="copyAiSummary()">🤖 AIに見せるサマリーをコピー</button>
+            </div>
+            <p class="study-note">ログインしなくても使えます。あなたのAI（Museなど）に学習記録を見せたいときは、このサマリーをコピーしてAIに貼ってください。</p>
             <details style="margin-top:8px;">
                 <summary style="cursor:pointer; font-size:0.9rem; color:var(--accent, #2563eb);">クラウド同期の詳しい説明</summary>
                 <div class="study-note" style="text-align:left; line-height:1.7; margin-top:6px;">
@@ -1007,6 +1011,72 @@
             document.getElementById('quiz-count').value = '20';
             window.scrollTo({ top: 0, behavior: 'smooth' });
             startQuiz();
+        }
+
+        function copyAiSummary() {
+            const btn = document.getElementById('ai-summary-btn');
+            const wrong = loadWrong();
+            let st = {};
+            try { st = JSON.parse(localStorage.getItem(LS_STATS)) || {}; } catch(e) {}
+            const cs = loadCatStats();
+            const now = new Date();
+            const dstr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const lines = [];
+            lines.push('以下は、鍼灸国家試験対策演習サイトでの私の学習記録です。苦手分野の把握と復習に使ってください。');
+            lines.push(`（${dstr} 時点）`);
+            lines.push('');
+            if (st.answered) {
+                lines.push(`■ 学習記録：通算 ${st.answered}問回答、正解 ${st.correct}問、正答率 ${Math.round(st.correct / st.answered * 100)}%`);
+            } else {
+                lines.push('■ 学習記録：まだ記録がありません。');
+            }
+            lines.push(`■ 苦手リスト：${wrong.length}問`);
+            const rateSort = obj => Object.keys(obj || {}).filter(k => obj[k].a >= 3)
+                .map(k => ({ k, a: obj[k].a, c: obj[k].c, rate: obj[k].c / obj[k].a }))
+                .sort((x, y) => x.rate - y.rate);
+            const subjRows = rateSort(cs.subject);
+            if (subjRows.length) {
+                lines.push('');
+                lines.push('■ 科目別の正答率（低い順）：');
+                subjRows.forEach(r => lines.push(`・${r.k}：${Math.round(r.rate * 100)}%（${r.c}/${r.a}問）`));
+            }
+            const midRows = rateSort(cs.mid).slice(0, 10);
+            if (midRows.length) {
+                lines.push('');
+                lines.push('■ 分野別の正答率（低い順・上位10件）：');
+                midRows.forEach(r => lines.push(`・${r.k}：${Math.round(r.rate * 100)}%（${r.c}/${r.a}問）`));
+            }
+            if (wrong.length && masterData && masterData.length) {
+                lines.push('');
+                lines.push('■ 苦手な問題の一覧：');
+                wrong.forEach(id => {
+                    const q = masterData.find(x => String(getValue(x, ['全体通し番号', '通し番号'])) === String(id));
+                    if (!q) return;
+                    const subj = getValue(q, ['教科', '分野', '科目']);
+                    const yr = getValue(q, ['試験の回数', '開催回', '回']);
+                    const num = examQuestionNum(q);
+                    let stem = getValue(q, ['問題', '問題文', '問']) || '';
+                    stem = stem.replace(/\s+/g, ' ').slice(0, 70);
+                    lines.push(`・【${subj}】${yr} 問題${num}：${stem}`);
+                });
+            }
+            const text = lines.join('\n');
+            const done = () => {
+                if (btn) { const orig = btn.textContent; btn.textContent = '✓ コピーしました'; setTimeout(() => { btn.textContent = orig; }, 2000); }
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done).catch(() => { fallbackCopy(text); done(); });
+            } else { fallbackCopy(text); done(); }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            document.body.removeChild(ta);
         }
 
         function updateStudyPanel() {
