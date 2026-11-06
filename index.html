@@ -658,6 +658,8 @@
 
                 <span id="exam-timer" style="display:none;"></span>
 
+                <span id="q-timer" style="display:none; font-weight:700;"></span>
+
                 <span id="quiz-exam-info"></span>
 
             </div>
@@ -747,6 +749,8 @@
 
             </div>
 
+            <div id="score-time" style="text-align:center; font-weight:700; margin-top:8px; display:none;"></div>
+
         </div>
 
 
@@ -793,6 +797,37 @@
 
         window.cloudLogin = function() { alert('同期機能を読み込み中です。少し待ってからもう一度押してください。'); };
         window.cloudLogout = function() {};
+
+        let qTimerId = null;
+        let quizStartAt = 0;
+        let qStartAt = 0;
+        let qTimes = [];
+
+        function fmtElapsed(sec) {
+            sec = Math.max(0, Math.floor(sec));
+            return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+        }
+
+        function startQTimer() {
+            stopQTimer();
+            quizStartAt = Date.now();
+            qTimes = [];
+            const el = document.getElementById('q-timer');
+            if (el) el.style.display = '';
+            qTimerId = setInterval(() => {
+                const el2 = document.getElementById('q-timer');
+                if (!el2) return;
+                const qSec = qStartAt ? (Date.now() - qStartAt) / 1000 : 0;
+                const totSec = (Date.now() - quizStartAt) / 1000;
+                el2.textContent = `⏱ この問題 ${fmtElapsed(qSec)}（合計 ${fmtElapsed(totSec)}）`;
+            }, 500);
+        }
+
+        function stopQTimer() {
+            if (qTimerId) { clearInterval(qTimerId); qTimerId = null; }
+            const el = document.getElementById('q-timer');
+            if (el) el.style.display = 'none';
+        }
 
         let examMode = false;
         let examPhase = 0;
@@ -1111,6 +1146,7 @@
             const wrong = loadWrong();
             if (!wrong.length) { alert('苦手リストは空です。まずは普通に解いてみましょう。'); return; }
             weakMode = true;
+            stopQTimer(); quizStartAt = 0; qStartAt = 0; qTimes = [];
             quizSet = masterData.filter(q => wrong.includes(getValue(q, ['全体通し番号', '通し番号'])));
             if (!quizSet.length) { alert('苦手リストの問題がデータ内に見つかりませんでした。'); return; }
             quizSet.sort(() => Math.random() - 0.5);
@@ -1730,6 +1766,7 @@
             examFirstSet = am; examSecondSet = pm;
             examYearLabel = year;
             examMode = true; weakMode = false; examPhase = 1;
+            stopQTimer(); quizStartAt = 0; qStartAt = 0; qTimes = [];
             quizSet = examFirstSet;
             currentIndex = 0;
             document.getElementById('setup-area').classList.remove('active');
@@ -1839,6 +1876,8 @@
         function startQuiz() {
 
             weakMode = false;
+
+            stopQTimer(); quizStartAt = 0; qStartAt = 0; qTimes = [];
 
             const year = document.getElementById('filter-year').value;
 
@@ -1959,6 +1998,11 @@
         function showQuestion() {
 
             const q = quizSet[currentIndex];
+
+            if (!examMode) {
+                if (!qTimerId) startQTimer();
+                qStartAt = Date.now();
+            }
 
             
 
@@ -2085,6 +2129,11 @@
         function checkAnswer(selected, btn) {
 
             const q = quizSet[currentIndex];
+
+            if (!examMode && qStartAt) {
+                qTimes[currentIndex] = (Date.now() - qStartAt) / 1000;
+                qStartAt = 0;
+            }
 
             q.userSelected = selected;
 
@@ -2224,6 +2273,20 @@
 
                 document.getElementById('score-detail').innerText = `${quizSet.length}問中 ${score}問 正解`;
 
+                stopQTimer();
+                const timeEl = document.getElementById('score-time');
+                const answeredTimes = qTimes.filter(t => typeof t === 'number');
+                if (!examMode && answeredTimes.length) {
+                    const totalT = answeredTimes.reduce((a, b) => a + b, 0);
+                    const avgT = totalT / answeredTimes.length;
+                    let slowestIdx = -1;
+                    qTimes.forEach((t, i) => { if (typeof t === 'number' && (slowestIdx < 0 || t > qTimes[slowestIdx])) slowestIdx = i; });
+                    timeEl.textContent = `⏱ 合計 ${fmtElapsed(totalT)} ・ 平均 ${Math.round(avgT)}秒/問（本番の目安は約87秒/問） ・ 最もかかった問題 Q${slowestIdx + 1}（${Math.round(qTimes[slowestIdx])}秒）`;
+                    timeEl.style.display = '';
+                } else {
+                    timeEl.style.display = 'none';
+                }
+
 
 
                 const listContainer = document.getElementById('review-list');
@@ -2256,7 +2319,7 @@
 
                     const qExam = `${getValue(q, ['試験の回数', '開催回'])} ${examNum}`;
 
-                    
+                    const timeStr = (!examMode && typeof qTimes[i] === 'number') ? `<span style="font-size:0.85rem; color:#64748b; margin-left:4px;">⏱ ${Math.round(qTimes[i])}秒</span>` : '';
 
                     li.innerHTML = `
 
@@ -2268,7 +2331,7 @@
 
                             <span class="badge badge-subject" style="font-size:0.7rem; padding:2px 6px;">${qSubject}</span>
 
-                            <span style="font-size:0.85rem; color:#64748b; margin-left:4px;">${qExam}</span>
+                            <span style="font-size:0.85rem; color:#64748b; margin-left:4px;">${qExam}</span>${timeStr}
 
                         </div>
 
