@@ -1159,9 +1159,17 @@
 
                         i++; 
 
+                    } else if (!insideQuotes && currentCell === '') {
+
+                        insideQuotes = true;
+
+                    } else if (insideQuotes && (nextChar === ',' || nextChar === '\n' || nextChar === '\r' || nextChar === undefined)) {
+
+                        insideQuotes = false;
+
                     } else {
 
-                        insideQuotes = !insideQuotes;
+                        currentCell += char;
 
                     }
 
