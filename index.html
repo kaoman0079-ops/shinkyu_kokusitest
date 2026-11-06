@@ -562,7 +562,29 @@
                 <button type="button" id="weak-btn" class="btn-weak" onclick="startWeakQuiz()">🎯 苦手問題だけ解く（<span id="weak-count">0</span>問）</button>
                 <button type="button" class="btn-quick" onclick="clearWrong()">苦手リストをリセット</button>
             </div>
-            <p class="study-note">間違えた問題は自動で「苦手リスト」に貯まります。苦手モードで正解するとリストから外れます。記録はこの端末内に保存されます。</p>
+            <p class="study-note">間違えた問題は自動で「苦手リスト」に貯まります。苦手モードで正解するとリストから外れます。記録はこの端末内に保存されます（下のクラウド同期にログインすると端末間で共有できます）。</p>
+        </div>
+
+        <div class="study-panel" id="sync-panel">
+            <div class="study-stats">☁ クラウド同期（端末をまたいで記録を共有）</div>
+            <div id="sync-status" class="study-note" style="margin:8px 0;">未ログイン：記録はこの端末だけに保存されています。</div>
+            <div class="study-actions">
+                <button type="button" class="btn-quick" id="sync-login-btn" onclick="cloudLogin()">Googleでログイン</button>
+                <button type="button" class="btn-quick" id="sync-logout-btn" onclick="cloudLogout()" style="display:none;">ログアウト</button>
+            </div>
+            <p class="study-note">ログインすると、苦手リストと学習記録・弱点分析が自動でクラウドに保存され、別の端末でも同じ記録で勉強できます。</p>
+            <details style="margin-top:8px;">
+                <summary style="cursor:pointer; font-size:0.9rem; color:var(--accent, #2563eb);">クラウド同期の詳しい説明</summary>
+                <div class="study-note" style="text-align:left; line-height:1.7; margin-top:6px;">
+                    <p>・同期されるのは「苦手リスト」「学習記録（通算の回答数・正答率）」「弱点分析（科目別・分野別の成績）」の3つです。</p>
+                    <p>・記録はあなたのGoogleアカウントに紐づけてクラウド（Firebase）に保存されます。あなた以外の人は見ることも書き換えることもできません。</p>
+                    <p>・スマホ・タブレット・パソコンなど、どの端末でも同じGoogleアカウントでログインすれば、同じ記録の続きから勉強できます。</p>
+                    <p>・初めてログインしたときは、今この端末に貯まっている記録がそのままクラウドに引き継がれます。</p>
+                    <p>・複数の端末に記録がある場合は、苦手リストは両方を合算し、学習記録と弱点分析は新しい方の記録を採用します。</p>
+                    <p>・問題を解くたびに自動で同期されます（ネットが切れている間は端末内に記録され、つながったときに送られます）。</p>
+                    <p>・ログアウトしても端末内の記録は消えません。ログインしていない間は、今まで通りこの端末だけに記録されます。</p>
+                </div>
+            </details>
         </div>
 
         <div class="exam-panel">
@@ -747,6 +769,15 @@
         const LS_WRONG = 'sk_wrong_ids';
         const LS_STATS = 'sk_stats';
         const LS_CATSTATS = 'sk_catstats';
+        const LS_UPDATED = 'sk_updated_at';
+
+        function markLocalUpdated() {
+            try { localStorage.setItem(LS_UPDATED, String(Date.now())); } catch(e) {}
+            if (window.__requestSync) { try { window.__requestSync(); } catch(e) {} }
+        }
+
+        window.cloudLogin = function() { alert('同期機能を読み込み中です。少し待ってからもう一度押してください。'); };
+        window.cloudLogout = function() {};
 
         let examMode = false;
         let examPhase = 0;
@@ -784,6 +815,7 @@
             const big = getValue(q, ['大項目']); const mid = getValue(q, ['中項目']);
             bump(cs.mid, (big && mid) ? (big + ' ＞ ' + mid) : (mid || big));
             try { localStorage.setItem(LS_CATSTATS, JSON.stringify(cs)); } catch(e) {}
+            markLocalUpdated();
         }
 
         function loadCatStats() {
@@ -793,6 +825,7 @@
         function clearCatStats() {
             if (confirm('弱点分析の記録（科目別・分野別の正答率）をすべて消しますか？')) {
                 try { localStorage.removeItem(LS_CATSTATS); } catch(e) {}
+                markLocalUpdated();
                 updateStudyPanel();
             }
         }
@@ -1010,7 +1043,7 @@
         }
 
         function clearWrong() {
-            if (confirm('苦手リストをすべて消しますか？')) { saveWrong([]); updateStudyPanel(); }
+            if (confirm('苦手リストをすべて消しますか？')) { saveWrong([]); markLocalUpdated(); updateStudyPanel(); }
         }
 
 
@@ -2188,6 +2221,139 @@
                 });
 
             
+        }
+
+    </script>
+
+    <script type="module">
+
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAhkYt_5KanKTo8MyH5IRGvYTtDDCyIrRM",
+            authDomain: "shinkyu-sync.firebaseapp.com",
+            projectId: "shinkyu-sync",
+            storageBucket: "shinkyu-sync.firebasestorage.app",
+            messagingSenderId: "851562029346",
+            appId: "1:851562029346:web:807adc279cdbbcbda1c57b"
+        };
+
+        const K_WRONG = 'sk_wrong_ids';
+        const K_STATS = 'sk_stats';
+        const K_CAT = 'sk_catstats';
+        const K_UPD = 'sk_updated_at';
+
+        const statusEl = document.getElementById('sync-status');
+        const loginBtn = document.getElementById('sync-login-btn');
+        const logoutBtn = document.getElementById('sync-logout-btn');
+
+        function setStatus(t) { if (statusEl) statusEl.textContent = t; }
+
+        if (!firebaseConfig) {
+            setStatus('クラウド同期は準備中です（記録はこの端末に保存されています）。');
+            if (loginBtn) loginBtn.style.display = 'none';
+        } else {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            const provider = new GoogleAuthProvider();
+
+            let currentUser = null;
+            let unsub = null;
+            let syncTimer = null;
+            let lastPushedAt = 0;
+
+            function readLocal() {
+                let wrong = [], stats = {}, catstats = {}, updatedAt = 0;
+                try { wrong = JSON.parse(localStorage.getItem(K_WRONG)) || []; } catch(e) {}
+                try { stats = JSON.parse(localStorage.getItem(K_STATS)) || {}; } catch(e) {}
+                try { catstats = JSON.parse(localStorage.getItem(K_CAT)) || {}; } catch(e) {}
+                try { updatedAt = parseInt(localStorage.getItem(K_UPD) || '0', 10) || 0; } catch(e) {}
+                return { wrong: wrong.map(x => String(x)), stats, catstats, updatedAt };
+            }
+
+            function writeLocal(d) {
+                try { localStorage.setItem(K_WRONG, JSON.stringify(d.wrong || [])); } catch(e) {}
+                try { localStorage.setItem(K_STATS, JSON.stringify(d.stats || {})); } catch(e) {}
+                try { localStorage.setItem(K_CAT, JSON.stringify(d.catstats || {})); } catch(e) {}
+                try { localStorage.setItem(K_UPD, String(d.updatedAt || 0)); } catch(e) {}
+                if (typeof updateStudyPanel === 'function') updateStudyPanel();
+                if (typeof renderWeakness === 'function') renderWeakness();
+            }
+
+            async function pushCloud(d) {
+                if (!currentUser) return;
+                const payload = { wrong: d.wrong, stats: d.stats, catstats: d.catstats, updatedAt: d.updatedAt || Date.now() };
+                lastPushedAt = payload.updatedAt;
+                try { await setDoc(doc(db, 'users', currentUser.uid), payload); }
+                catch(e) { setStatus('同期に失敗しました。ネット接続を確認してください。'); }
+            }
+
+            window.__requestSync = function() {
+                if (!currentUser) return;
+                if (syncTimer) clearTimeout(syncTimer);
+                syncTimer = setTimeout(() => { pushCloud(readLocal()); }, 1500);
+            };
+
+            window.cloudLogin = async function() {
+                try { await signInWithPopup(auth, provider); }
+                catch(e) {
+                    try { await signInWithRedirect(auth, provider); }
+                    catch(e2) { alert('ログインできませんでした。ポップアップの許可を確認してください。'); }
+                }
+            };
+
+            window.cloudLogout = async function() {
+                try { await signOut(auth); } catch(e) {}
+            };
+
+            getRedirectResult(auth).catch(() => {});
+
+            onAuthStateChanged(auth, async (user) => {
+                currentUser = user;
+                if (unsub) { unsub(); unsub = null; }
+                if (!user) {
+                    if (loginBtn) loginBtn.style.display = '';
+                    if (logoutBtn) logoutBtn.style.display = 'none';
+                    setStatus('未ログイン：記録はこの端末だけに保存されています。');
+                    return;
+                }
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = '';
+                setStatus(`ログイン中：${user.email || ''}（自動で同期します）`);
+
+                const ref = doc(db, 'users', user.uid);
+                try {
+                    const snap = await getDoc(ref);
+                    const local = readLocal();
+                    if (!snap.exists()) {
+                        await pushCloud(local);
+                    } else {
+                        const cloud = snap.data();
+                        const mergedWrong = [...new Set([...(cloud.wrong || []).map(x => String(x)), ...local.wrong])];
+                        const cloudNewer = (cloud.updatedAt || 0) >= (local.updatedAt || 0);
+                        const merged = cloudNewer
+                            ? { wrong: mergedWrong, stats: cloud.stats || {}, catstats: cloud.catstats || {}, updatedAt: cloud.updatedAt || 0 }
+                            : { wrong: mergedWrong, stats: local.stats, catstats: local.catstats, updatedAt: local.updatedAt };
+                        writeLocal(merged);
+                        if (JSON.stringify(mergedWrong) !== JSON.stringify(cloud.wrong || []) || !cloudNewer) {
+                            await pushCloud(merged);
+                        }
+                    }
+                } catch(e) {
+                    setStatus('クラウドの読み込みに失敗しました。ネット接続を確認してください。');
+                }
+
+                unsub = onSnapshot(ref, (snap) => {
+                    if (!snap.exists()) return;
+                    const cloud = snap.data();
+                    if ((cloud.updatedAt || 0) <= (parseInt(localStorage.getItem(K_UPD) || '0', 10) || 0)) return;
+                    if (cloud.updatedAt === lastPushedAt) return;
+                    writeLocal({ wrong: (cloud.wrong || []).map(x => String(x)), stats: cloud.stats || {}, catstats: cloud.catstats || {}, updatedAt: cloud.updatedAt || 0 });
+                });
+            });
         }
 
     </script>
