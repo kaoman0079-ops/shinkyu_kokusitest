@@ -611,9 +611,14 @@
                     <option value="hari">はり師のみ</option>
                     <option value="kyu">きゅう師のみ</option>
                 </select>
+                <select id="exam-scope">
+                    <option value="both">午前＋午後（通し）</option>
+                    <option value="am">午前のみ</option>
+                    <option value="pm">午後のみ</option>
+                </select>
             </div>
             <button type="button" class="btn-exam" onclick="startExam()">模試を開始する</button>
-            <p class="exam-note">本番と同じ午前・午後の2部構成。制限時間つき（両方受験：各2時間10分／片方のみ：午後は2時間）で、途中は解説なし、最後に一括採点と科目別成績・合格ライン（60%）判定が出ます。</p>
+            <p class="exam-note">午前のみ・午後のみ・通しが選べます。制限時間つき（両方受験：各2時間10分／片方のみ：午後は2時間）で、途中は解説なし、最後に一括採点と科目別成績・合格ライン（60%）判定が出ます。受けなかった部や未回答の問題は、苦手リスト・弱点分析に記録されません。</p>
         </div>
 
         <div class="study-panel" id="weak-panel" style="display:none;">
@@ -825,6 +830,8 @@
         let examPhase = 0;
         let examYearLabel = '';
         let examType = 'both';
+        let examScope = 'both';
+        let examSecondStarted = false;
         let examFirstSet = [];
         let examSecondSet = [];
         let examTimerId = null;
@@ -1744,6 +1751,7 @@
             const year = document.getElementById('exam-year').value;
             if (!year) { alert('模試に使える回がまだ読み込めていません。'); return; }
             examType = document.getElementById('exam-type').value;
+            examScope = document.getElementById('exam-scope').value;
             const pool = masterData.filter(q => getValue(q, ['試験の回数', '開催回', '回']) === year
                 && !['992', '964'].includes(getValue(q, ['全体通し番号', '通し番号'])));
             const maxNum = Math.max(...pool.map(examQuestionNum));
@@ -1757,13 +1765,21 @@
             if (!am.length || !pm.length) { alert('この回の問題がそろっていません。'); return; }
             examFirstSet = am; examSecondSet = pm;
             examYearLabel = year;
-            examMode = true; weakMode = false; examPhase = 1;
+            examMode = true; weakMode = false;
+            examSecondStarted = false;
             stopQTimer(); quizStartAt = 0; qStartAt = 0; qTimes = [];
-            quizSet = examFirstSet;
             currentIndex = 0;
             document.getElementById('setup-area').classList.remove('active');
             document.getElementById('quiz-area').classList.add('active');
-            startExamTimer(130);
+            if (examScope === 'pm') {
+                examPhase = 2;
+                quizSet = examSecondSet;
+                startExamTimer(examType === 'both' ? 130 : 120);
+            } else {
+                examPhase = 1;
+                quizSet = examFirstSet;
+                startExamTimer(130);
+            }
             showQuestion();
         }
 
@@ -1804,6 +1820,7 @@
 
         function startExamSecondHalf() {
             examPhase = 2;
+            examSecondStarted = true;
             quizSet = examSecondSet;
             currentIndex = 0;
             document.getElementById('break-area').classList.remove('active');
@@ -1818,40 +1835,59 @@
 
         function gradeExam() {
             stopExamTimer();
-            const all = examFirstSet.concat(examSecondSet);
+            const full = examFirstSet.concat(examSecondSet);
+            let graded;
+            if (examScope === 'am') graded = examFirstSet.slice();
+            else if (examScope === 'pm') graded = examSecondSet.slice();
+            else graded = examSecondStarted ? full : examFirstSet.slice();
             let correctCount = 0;
+            let unansweredCount = 0;
             const perSubject = {};
-            all.forEach(q => {
+            graded.forEach(q => {
                 const correctNums = (String(getValue(q, ['答え', '正解', '解答'])).match(/\d+/g) || []).map(Number);
-                const ok = !!q.userSelected && correctNums.includes(q.userSelected);
+                const answered = !!q.userSelected;
+                const ok = answered && correctNums.includes(q.userSelected);
                 q.userCorrect = ok;
                 if (ok) correctCount++;
+                if (!answered) unansweredCount++;
                 const s = getValue(q, ['教科', '分野', '科目']);
                 if (!perSubject[s]) perSubject[s] = { a: 0, c: 0 };
                 perSubject[s].a++; if (ok) perSubject[s].c++;
-                recordAnswer(q, ok);
+                if (answered) recordAnswer(q, ok);
             });
             score = correctCount;
-            quizSet = all;
+            quizSet = graded;
             examMode = false;
             document.getElementById('break-area').classList.remove('active');
             document.getElementById('quiz-area').classList.remove('active');
-            const total = all.length;
+            const total = graded.length;
             const rate = total ? correctCount / total : 0;
-            const passLine = Math.ceil(total * 0.6);
-            const passed = correctCount >= passLine;
+            const passLineFull = Math.ceil(full.length * 0.6);
+            const isFull = (total === full.length);
+            const passLine = isFull ? passLineFull : Math.ceil(total * 0.6);
+            const passed = isFull && correctCount >= passLineFull;
             const sum = document.getElementById('exam-summary');
             const typeLabel = examType === 'hari' ? 'はり師のみ' : (examType === 'kyu' ? 'きゅう師のみ' : 'はり師＋きゅう師');
+            const scopeLabel = examScope === 'am' ? '午前のみ' : (examScope === 'pm' ? '午後のみ' : (isFull ? '午前＋午後' : '午前のみ（途中終了）'));
             let rows = Object.keys(perSubject).map(s => {
                 const p = perSubject[s];
                 const r = Math.round(p.c / p.a * 100);
                 const col = r < 50 ? '#bf443c' : (r < 70 ? '#b45309' : '#2e7d5b');
                 return `<tr><td>${s}</td><td>${p.c}/${p.a}問</td><td style="color:${col}; font-weight:700;">${r}%</td></tr>`;
             }).join('');
-            sum.innerHTML = `<div class="exam-verdict ${passed ? 'verdict-pass' : 'verdict-fail'}">${passed ? '🎉 合格ライン到達！' : '📈 合格ラインまであと ' + (passLine - correctCount) + '問'}</div>`
-                + `<p style="text-align:center; color:#475569; font-weight:700;">${examYearLabel} 模試（${typeLabel}）／ 合格ライン ${passLine}問（60%）</p>`
+            let verdictHtml;
+            if (isFull) {
+                verdictHtml = `<div class="exam-verdict ${passed ? 'verdict-pass' : 'verdict-fail'}">${passed ? '🎉 合格ライン到達！' : '📈 合格ラインまであと ' + (passLineFull - correctCount) + '問'}</div>`;
+            } else {
+                const need = passLineFull - correctCount;
+                const otherLabel = (examScope === 'pm') ? '午前' : '午後';
+                verdictHtml = `<div class="exam-verdict ${rate >= 0.6 ? 'verdict-pass' : 'verdict-fail'}">📊 ${scopeLabel}の結果：${correctCount}/${total}問（${Math.round(rate * 100)}%）</div>`
+                    + `<p style="text-align:center; color:#475569; font-weight:700;">全体の合格ライン（${passLineFull}問）には、${otherLabel}の部で あと ${need} 問必要です</p>`;
+            }
+            sum.innerHTML = verdictHtml
+                + `<p style="text-align:center; color:#475569; font-weight:700;">${examYearLabel} 模試（${typeLabel}／${scopeLabel}）／ 合格ライン ${passLineFull}問（60%）</p>`
                 + `<table class="weak-table" style="margin-top:10px;"><tr><th>科目</th><th>正解</th><th>正答率</th></tr>${rows}</table>`
-                + `<p class="exam-note">間違えた問題は苦手リストと弱点分析に記録しました。下のリストで1問ずつ復習できます。</p>`;
+                + `<p class="exam-note">間違えた問題は苦手リストと弱点分析に記録しました。下のリストで1問ずつ復習できます。${unansweredCount ? '（未回答の' + unansweredCount + '問は記録していません）' : ''}</p>`;
             sum.style.display = 'block';
             showResults();
             updateStudyPanel();
@@ -2109,7 +2145,7 @@
                     document.getElementById('prev-btn').disabled = (currentIndex === 0);
                     const last = (currentIndex === quizSet.length - 1);
                     document.getElementById('exam-next-btn').textContent = last
-                        ? (examPhase === 1 ? '午前の部を終了する ➔' : '採点する（模試終了）')
+                        ? ((examPhase === 1 && examScope !== 'am') ? '午前の部を終了する ➔' : '採点する（模試終了）')
                         : '次の問題へ ➔';
                 }
             }
@@ -2214,6 +2250,8 @@
                 if (currentIndex < quizSet.length - 1) {
                     currentIndex++;
                     showQuestion();
+                } else if (examPhase === 1 && examScope === 'am') {
+                    gradeExam();
                 } else if (examPhase === 1) {
                     stopExamTimer();
                     document.getElementById('quiz-area').classList.remove('active');
