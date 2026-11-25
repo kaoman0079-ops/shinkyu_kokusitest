@@ -2380,7 +2380,7 @@
                         const ot = cleanOptionText(getValue(q, [`選択肢${k}`, `選択肢 ${k}`, `肢${k}`]) || '');
                         let mark = '';
                         let cls = '';
-                        if (correctNums.includes(k)) { mark = ' ◯正解'; cls = ' is-correct'; }
+                        if (correctNums.includes(k)) { mark = (q.userSelected === k) ? ' ◯正解（あなたの回答）' : ' ◯正解'; cls = ' is-correct'; }
                         if (q.userSelected === k && !correctNums.includes(k)) { mark = ' ✖あなたの回答'; cls = ' is-wrong'; }
                         optsHtml += `<div class="review-opt${cls}">${k}. ${formatText(ot)}${mark}</div>`;
                     }
